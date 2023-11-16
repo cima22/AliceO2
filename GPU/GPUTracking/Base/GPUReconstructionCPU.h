@@ -41,6 +41,7 @@
 #include "GPUITSFitterKernels.h"
 #include "GPUTPCConvertKernel.h"
 #include "GPUTPCCompressionKernels.h"
+#include "GPUTPCDecompressionKernels.h"
 #include "GPUTPCClusterFinderKernels.h"
 #include "GPUTrackingRefitKernel.h"
 #include "GPUTPCGMO2Output.h"
