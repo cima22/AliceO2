@@ -22,7 +22,7 @@
 #include "TPCClusterDecompressor.h"
 #endif
 #include "utils/strtag.h"
-//prova
+
 using namespace GPUCA_NAMESPACE::gpu;
 using namespace o2::tpc;
 
@@ -223,7 +223,9 @@ int GPUChainTracking::RunTPCDecompression()
   }
   gatherTimer.Stop();
   mIOPtrs.clustersNative = mClusterNativeAccess.get();
+  runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::test>(GetGridAuto(0), krnlRunRangeNone, krnlEventNone);
   if (mRec->IsGPU()) {
+    runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::test>(GetGridAuto(0), krnlRunRangeNone, krnlEventNone);
     AllocateRegisteredMemory(mInputsHost->mResourceClusterNativeBuffer);
     processorsShadow()->ioPtrs.clustersNative = mInputsShadow->mPclusterNativeAccess;
     WriteToConstantMemory(RecoStep::TPCDecompression, (char*)&processors()->ioPtrs - (char*)processors(), &processorsShadow()->ioPtrs, sizeof(processorsShadow()->ioPtrs), 0);
