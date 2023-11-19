@@ -23,6 +23,8 @@ namespace GPUCA_NAMESPACE::gpu
 class GPUTPCDecompressionKernels : public GPUKernelTemplate
 {
  public:
+  GPUhdi() constexpr static GPUDataTypes::RecoStep GetRecoStep() { return GPUDataTypes::RecoStep::TPCDecompression; }
+
   enum K : int {
     test = 0,
   };

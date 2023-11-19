@@ -14,6 +14,7 @@
 
 #include "GPUTPCDecompressionKernels.h"
 #include <stdio.h>
+#include "GPULogging.h"
 
 using namespace GPUCA_NAMESPACE::gpu;
 using namespace o2::tpc;
@@ -21,5 +22,5 @@ using namespace o2::tpc;
 template <>
 GPUdii() void GPUTPCDecompressionKernels::Thread<GPUTPCDecompressionKernels::test>(int nBlocks, int nThreads, int iBlock, int iThread, GPUsharedref() GPUSharedMemory& smem, processorType& processors)
 {
-  printf("Hello world!");
+  //LOGP(info, "===== Hello world!");
 }

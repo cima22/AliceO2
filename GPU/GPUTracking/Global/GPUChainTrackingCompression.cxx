@@ -28,6 +28,7 @@ using namespace o2::tpc;
 
 int GPUChainTracking::RunTPCCompression()
 {
+  LOGP(info, "====== Compression");
 #ifdef GPUCA_HAVE_O2HEADERS
   mRec->PushNonPersistentMemory(qStr2Tag("TPCCOMPR"));
   RecoStep myStep = RecoStep::TPCCompression;
@@ -207,6 +208,7 @@ int GPUChainTracking::RunTPCCompression()
 
 int GPUChainTracking::RunTPCDecompression()
 {
+  LOGP(info, "====== Decompression");
 #ifdef GPUCA_HAVE_O2HEADERS
   const auto& threadContext = GetThreadContext();
   TPCClusterDecompressor decomp;
@@ -223,7 +225,7 @@ int GPUChainTracking::RunTPCDecompression()
   }
   gatherTimer.Stop();
   mIOPtrs.clustersNative = mClusterNativeAccess.get();
-  runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::test>(GetGridAuto(0), krnlRunRangeNone, krnlEventNone);
+  LOGP(info, "====== isGPU: {} ", mRec->IsGPU());
   if (mRec->IsGPU()) {
     runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::test>(GetGridAuto(0), krnlRunRangeNone, krnlEventNone);
     AllocateRegisteredMemory(mInputsHost->mResourceClusterNativeBuffer);
