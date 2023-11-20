@@ -209,7 +209,10 @@ int GPUChainTracking::RunTPCCompression()
 int GPUChainTracking::RunTPCDecompression()
 {
   LOGP(info, "====== Decompression");
+
 #ifdef GPUCA_HAVE_O2HEADERS
+  RecoStep myStep = RecoStep::TPCDecompression;
+  bool doGPU = GetRecoStepsGPU() & RecoStep::TPCDecompression; // with -g gives true
   const auto& threadContext = GetThreadContext();
   TPCClusterDecompressor decomp;
   auto allocator = [this](size_t size) {
@@ -241,3 +244,5 @@ int GPUChainTracking::RunTPCDecompression()
 #endif
   return 0;
 }
+
+
