@@ -22,13 +22,23 @@
 
 namespace GPUCA_NAMESPACE::gpu
 {
-class GPUTPCGMMerger;
 
 class GPUTPCDecompression : public GPUProcessor
 {
   friend class GPUTPCDecmpressionKernels;
   friend class GPUChainTracking;
 
+ public:
+  unsigned int test = 42;
+  unsigned int* testP = nullptr;
+
+  void* SetPointersMemory(void* mem);
+
+#ifndef GPUCA_GPUCODE
+  void InitializeProcessor();
+  void RegisterMemoryAllocation();
+  void SetMaxData(const GPUTrackingInOutPointers& io);
+#endif
 };
 }
 #endif // GPUTPCDECOMPRESSION_H

@@ -13,3 +13,26 @@
 /// \author Gabriele Cimador
 
 #include "GPUTPCDecompression.h"
+#include "GPUReconstruction.h"
+#include "GPUO2DataTypes.h"
+#include "GPUMemorySizeScalers.h"
+
+using namespace GPUCA_NAMESPACE::gpu;
+
+void GPUTPCDecompression::InitializeProcessor() {}
+
+void* GPUTPCDecompression::SetPointersMemory(void* mem)
+{
+  computePointerWithAlignment(mem, testP);
+  return mem;
+}
+
+void GPUTPCDecompression::RegisterMemoryAllocation()
+{  AllocateAndInitializeLate();
+  mRec->RegisterMemoryAllocation(this, &GPUTPCDecompression::SetPointersMemory, GPUMemoryResource::MEMORY_PERMANENT, "TPCDecompressionMemory");
+}
+
+void GPUTPCDecompression::SetMaxData(const GPUTrackingInOutPointers& io)
+{
+
+}
