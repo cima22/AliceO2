@@ -13,3 +13,19 @@
 /// \author Gabriele Cimador
 
 #include "GPUTPCDecompression.h"
+#include "GPUReconstruction.h"
+#include "GPUO2DataTypes.h"
+#include "GPUMemorySizeScalers.h"
+
+using namespace GPUCA_NAMESPACE::gpu;
+
+void GPUTPCDecompression::InitializeProcessor() {}
+
+void GPUTPCDecompression::RegisterMemoryAllocation()
+{
+}
+
+void GPUTPCDecompression::SetMaxData(const GPUTrackingInOutPointers& io)
+{
+
+}

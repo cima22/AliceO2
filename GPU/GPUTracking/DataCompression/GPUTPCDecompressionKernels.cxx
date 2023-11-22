@@ -13,8 +13,9 @@
 /// \author Gabriele Cimador
 
 #include "GPUTPCDecompressionKernels.h"
-#include <stdio.h>
 #include "GPULogging.h"
+#include "GPUConstantMem.h"
+
 
 using namespace GPUCA_NAMESPACE::gpu;
 using namespace o2::tpc;
@@ -22,5 +23,12 @@ using namespace o2::tpc;
 template <>
 GPUdii() void GPUTPCDecompressionKernels::Thread<GPUTPCDecompressionKernels::test>(int nBlocks, int nThreads, int iBlock, int iThread, GPUsharedref() GPUSharedMemory& smem, processorType& processors)
 {
-  //LOGP(info, "===== Hello world!");
+  GPUTPCCompression& GPUrestrict() compressor = processors.tpcCompressor;
+  GPUTPCDecompression& GPUrestrict() decompressor = processors.tpcDecompressor;
+  unsigned int x = decompressor.test;
+  unsigned int y = compressor.mTest;
+  if (!iThread && !iBlock) {
+    GPUInfo("==== Test: X={%d} Y={%d} \n", x, y);
+  }
+
 }
