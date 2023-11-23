@@ -26,9 +26,8 @@ GPUdii() void GPUTPCDecompressionKernels::Thread<GPUTPCDecompressionKernels::tes
   GPUTPCCompression& GPUrestrict() compressor = processors.tpcCompressor;
   GPUTPCDecompression& GPUrestrict() decompressor = processors.tpcDecompressor;
   unsigned int x = decompressor.test;
-  unsigned int y = compressor.mTest;
   if (!iThread && !iBlock) {
-    GPUInfo("==== Test: X={%d} Y={%d} \n", x, y);
+    GPUInfo("==== Test: X={%d}, *testP = {%d} \n", x, *decompressor.testP);
   }
 
 }

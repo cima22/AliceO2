@@ -30,7 +30,10 @@ class GPUTPCDecompression : public GPUProcessor
 
  public:
   unsigned int test = 42;
-  unsigned int* testP;
+  unsigned int* testP = nullptr;
+
+  void* SetPointersMemory(void* mem);
+
 #ifndef GPUCA_GPUCODE
   void InitializeProcessor();
   void RegisterMemoryAllocation();
