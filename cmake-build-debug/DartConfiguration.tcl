@@ -27,8 +27,8 @@ SubmitInactivityTimeout:
 NightlyStartTime: 00:00:00 EDT
 
 # Commands for the build/test/submit cycle
-ConfigureCommand: "/home/cimag/.cache/JetBrains/RemoteDev/dist/2203e709e1a54_CLion-233.11555.2/bin/cmake/linux/x64/bin/cmake" "/experiments/alice/cimag/o2/O2"
-MakeCommand: /home/cimag/.cache/JetBrains/RemoteDev/dist/2203e709e1a54_CLion-233.11555.2/bin/cmake/linux/x64/bin/cmake --build . --config "${CTEST_CONFIGURATION_TYPE}"
+ConfigureCommand: "/home/cimag/.cache/JetBrains/RemoteDev/dist/b21c2b5ff1f19_CLion-2023.2.2/bin/cmake/linux/x64/bin/cmake" "/experiments/alice/cimag/o2/O2"
+MakeCommand: /home/cimag/.cache/JetBrains/RemoteDev/dist/b21c2b5ff1f19_CLion-2023.2.2/bin/cmake/linux/x64/bin/cmake --build . --config "${CTEST_CONFIGURATION_TYPE}"
 DefaultCTestConfigurationType: Release
 
 # version control
