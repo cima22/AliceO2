@@ -17,6 +17,7 @@
 #include "GPUReconstruction.h"
 #include "GPUO2DataTypes.h"
 #include "GPUMemorySizeScalers.h"
+#include "GPULogging.h"
 
 using namespace GPUCA_NAMESPACE::gpu;
 
