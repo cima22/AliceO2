@@ -45,7 +45,7 @@ class GPUTPCDecompression : public GPUProcessor
  public:
   unsigned int test = 42;
   unsigned int* testP = nullptr;
-  o2::tpc::CompressedClusters* mInputGPU = nullptr; // TODO: move to protected once test is assessed
+  o2::tpc::CompressedClusters mInputGPU; // TODO: move to protected once test is assessed
 
 
 #ifndef GPUCA_GPUCODE

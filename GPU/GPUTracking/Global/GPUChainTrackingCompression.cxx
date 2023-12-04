@@ -219,18 +219,17 @@ int GPUChainTracking::RunTPCDecompression()
 
   CompressedClusters c;
   const CompressedClusters* p;
-  CompressedClusters* compressedClustersInputGPU = Decompressor.mInputGPU;
-  memset((void*)compressedClustersInputGPU, 0, sizeof(*compressedClustersInputGPU));
+  CompressedClusters& compressedClustersInputGPU = Decompressor.mInputGPU;
   c = *mIOPtrs.tpcCompressedClusters;
   p = &c;
-  compressedClustersInputGPU->nAttachedClusters = p->nAttachedClusters;
-  compressedClustersInputGPU->nUnattachedClusters = p->nUnattachedClusters;
-  compressedClustersInputGPU->nTracks = p->nTracks;
-  compressedClustersInputGPU->nAttachedClustersReduced = compressedClustersInputGPU->nAttachedClusters - compressedClustersInputGPU->nTracks;
-  compressedClustersInputGPU->nSliceRows = NSLICES * GPUCA_ROW_COUNT;
-  compressedClustersInputGPU->nComppressionModes = param().rec.tpc.compressionTypeMask;
-  compressedClustersInputGPU->solenoidBz = param().bzkG;
-  compressedClustersInputGPU->maxTimeBin = param().par.continuousMaxTimeBin;
+  compressedClustersInputGPU.nAttachedClusters = p->nAttachedClusters;
+  compressedClustersInputGPU.nUnattachedClusters = p->nUnattachedClusters;
+  compressedClustersInputGPU.nTracks = p->nTracks;
+  compressedClustersInputGPU.nAttachedClustersReduced = compressedClustersInputGPU.nAttachedClusters - compressedClustersInputGPU.nTracks;
+  compressedClustersInputGPU.nSliceRows = NSLICES * GPUCA_ROW_COUNT;
+  compressedClustersInputGPU.nComppressionModes = param().rec.tpc.compressionTypeMask;
+  compressedClustersInputGPU.solenoidBz = param().bzkG;
+  compressedClustersInputGPU.maxTimeBin = param().par.continuousMaxTimeBin;
   SetupGPUProcessor(&Decompressor, true);
 
   new (Decompressor.testP) unsigned int;
@@ -242,9 +241,10 @@ int GPUChainTracking::RunTPCDecompression()
 
   LOGP(info, "==== Decompressor testP: {}, DecompressorShadow testP: {}",(void*)Decompressor.testP,(void*)DecompressorShadow.testP);
   unsigned int offset = 0;
-  char direction = 0;
+  char direction = 1;
   int outputStream = 0;
-  //GPUMemCpyAlways(myStep, DecompressorShadow.mInputGPU->nSliceRowClusters, p->nSliceRowClusters, NSLICES * GPUCA_ROW_COUNT * sizeof(DecompressorShadow.mInputGPU->nSliceRowClusters[0]), outputStream, direction);
+  GPUMemCpyAlways(myStep, DecompressorShadow.mInputGPU.nSliceRowClusters, p->nSliceRowClusters, NSLICES * GPUCA_ROW_COUNT * sizeof(p->nSliceRowClusters[0]), outputStream, direction);
+  LOGP(info,"===== nSliceRowClusters[1] on host = {}",p->nSliceRowClusters[1]);
  // GPUMemCpyAlways(myStep, O->nTrackClusters, P->nTrackClusters, O->nTracks * sizeof(O->nTrackClusters[0]), outputStream, direction);
  /* for (int i = 0; i < compressedClustersInputGPU->nTracks; ++i) {
     GPUMemCpyAlways(myStep, DecompressorShadow.mInputGPU->qTotA + offset, p->qTotA + p.mAttachedClusterFirstIndex[i], compressedClustersInputGPU->nTrackClusters[i] * sizeof(DecompressorShadow.mInputGPU->qTotA[0]), outputStream, direction);

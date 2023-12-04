@@ -25,7 +25,7 @@ void GPUTPCDecompression::InitializeProcessor() {}
 
 void* GPUTPCDecompression::SetPointersInputGPU(void* mem)
 {
-  SetPointersCompressedClusters(mem, *mInputGPU, mInputGPU->nAttachedClusters, mInputGPU->nTracks, mInputGPU->nUnattachedClusters, true);
+  SetPointersCompressedClusters(mem, mInputGPU, mInputGPU.nAttachedClusters, mInputGPU.nTracks, mInputGPU.nUnattachedClusters, true);
   return mem;
 }
 
@@ -67,14 +67,14 @@ void GPUTPCDecompression::SetPointersCompressedClusters(void*& mem, T& c, unsign
 
 void* GPUTPCDecompression::SetPointersMemory(void* mem)
 {
-  computePointerWithAlignment(mem, mInputGPU);
+  //computePointerWithAlignment(mem, mInputGPU);
   computePointerWithAlignment(mem, testP);
   return mem;
 }
 
 void GPUTPCDecompression::RegisterMemoryAllocation() {
   AllocateAndInitializeLate();
-  mMemoryResInputGPU = mRec->RegisterMemoryAllocation(this, &GPUTPCDecompression::SetPointersInputGPU, GPUMemoryResource::MEMORY_INPUT, "TPCDecompressionInput");
+  mMemoryResInputGPU = mRec->RegisterMemoryAllocation(this, &GPUTPCDecompression::SetPointersInputGPU, GPUMemoryResource::MEMORY_INPUT_FLAG | GPUMemoryResource::MEMORY_GPU, "TPCDecompressionInput");
   mRec->RegisterMemoryAllocation(this, &GPUTPCDecompression::SetPointersMemory, GPUMemoryResource::MEMORY_PERMANENT, "TPCDecompressionMemory");
 }
 
