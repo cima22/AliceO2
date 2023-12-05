@@ -232,17 +232,17 @@ int GPUChainTracking::RunTPCDecompression()
   WriteToConstantMemory(myStep, (char*)&processors()->tpcDecompressor - (char*)processors(), &DecompressorShadow, sizeof(DecompressorShadow), 0);
   TransferMemoryResourcesToGPU(myStep, &Decompressor, 0);
 
-  LOGP(info,"==== nSliceRowClusters[1] on host: {}",cmprClsHost.nSliceRowClusters[1]);
-
-  unsigned int offset = 0;
-  char direction = 1;
   int outputStream = 0;
   CompressedClusters& inputGPUShadow = DecompressorShadow.mInputGPU;
   char* deviceFlatPts = (char*)inputGPUShadow.qTotU;
   GPUMemCpy(myStep, deviceFlatPts, cmprClsHost.qTotU, copySize, outputStream, true);
-  //GPUMemCpyAlways(myStep, inputGPUShadow.nSliceRowClusters, cmprClsHost.nSliceRowClusters, NSLICES * GPUCA_ROW_COUNT * sizeof(cmprClsHost.nSliceRowClusters[0]), outputStream, direction);
-  //GPUMemCpyAlways(myStep, inputGPUShadow.nTrackClusters, cmprClsHost.nTrackClusters, inputGPUShadow.nTracks * sizeof(cmprClsHost.nTrackClusters[0]), outputStream, direction);
-  SynchronizeStream(outputStream);/*
+  SynchronizeStream(outputStream);
+  /*
+  unsigned int offset = 0;
+  char direction = 1;
+  GPUMemCpyAlways(myStep, inputGPUShadow.nSliceRowClusters, cmprClsHost.nSliceRowClusters, NSLICES * GPUCA_ROW_COUNT * sizeof(cmprClsHost.nSliceRowClusters[0]), outputStream, direction);
+  GPUMemCpyAlways(myStep, inputGPUShadow.nTrackClusters, cmprClsHost.nTrackClusters, inputGPUShadow.nTracks * sizeof(cmprClsHost.nTrackClusters[0]), outputStream, direction);
+
   for (unsigned int i = 0; i < NSLICES; i++) {
     for (unsigned int j = 0; j < GPUCA_ROW_COUNT; j++) {
       GPUMemCpyAlways(myStep, inputGPUShadow.qTotU + offset, cmprClsHost.qTotU + offset, cmprClsHost.nSliceRowClusters[i * GPUCA_ROW_COUNT + j] * sizeof(cmprClsHost.qTotU[0]), outputStream, direction);

@@ -27,7 +27,6 @@ GPUdii() void GPUTPCDecompressionKernels::Thread<GPUTPCDecompressionKernels::tes
   GPUTPCDecompression& GPUrestrict() decompressor = processors.tpcDecompressor;
   if (!iThread && !iBlock) {
     GPUInfo("==== on GPU nAttCl = {%d}, nUnAttCl = {%d}, nTracks = {%d}",decompressor.mInputGPU.nAttachedClusters,decompressor.mInputGPU.nUnattachedClusters,decompressor.mInputGPU.nTracks);
-    GPUInfo("===== nSliceRowClusters[1] on gpu = %d",decompressor.mInputGPU.nSliceRowClusters[1]);
   }
 
 }
