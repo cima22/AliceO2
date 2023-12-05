@@ -39,15 +39,10 @@ namespace GPUCA_NAMESPACE::gpu
 
 class GPUTPCDecompression : public GPUProcessor
 {
-  friend class GPUTPCDecmpressionKernels;
+  friend class GPUTPCDecompressionKernels;
   friend class GPUChainTracking;
 
  public:
-  unsigned int test = 42;
-  unsigned int* testP = nullptr;
-  o2::tpc::CompressedClusters mInputGPU; // TODO: move to protected once test is assessed
-
-
 #ifndef GPUCA_GPUCODE
   void InitializeProcessor();
   void RegisterMemoryAllocation();
@@ -59,13 +54,11 @@ class GPUTPCDecompression : public GPUProcessor
 
  protected:
   constexpr static unsigned int NSLICES = GPUCA_NSLICES;
-
+  o2::tpc::CompressedClusters mInputGPU;
   template <class T>
   void SetPointersCompressedClusters(void*& mem, T& c, unsigned int nClA, unsigned int nTr, unsigned int nClU, bool reducedClA);
 
-
   short mMemoryResInputGPU = -1;
-
 };
-}
+} // namespace GPUCA_NAMESPACE::gpu
 #endif // GPUTPCDECOMPRESSION_H

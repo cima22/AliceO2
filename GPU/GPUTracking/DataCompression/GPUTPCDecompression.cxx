@@ -65,17 +65,9 @@ void GPUTPCDecompression::SetPointersCompressedClusters(void*& mem, T& c, unsign
   computePointerWithAlignment(mem, c.nTrackClusters, nTr);
 }
 
-void* GPUTPCDecompression::SetPointersMemory(void* mem)
-{
-  //computePointerWithAlignment(mem, mInputGPU);
-  computePointerWithAlignment(mem, testP);
-  return mem;
-}
-
 void GPUTPCDecompression::RegisterMemoryAllocation() {
   AllocateAndInitializeLate();
-  mMemoryResInputGPU = mRec->RegisterMemoryAllocation(this, &GPUTPCDecompression::SetPointersInputGPU, GPUMemoryResource::MEMORY_INPUT_FLAG | GPUMemoryResource::MEMORY_GPU, "TPCDecompressionInput");
-  mRec->RegisterMemoryAllocation(this, &GPUTPCDecompression::SetPointersMemory, GPUMemoryResource::MEMORY_PERMANENT, "TPCDecompressionMemory");
+  mMemoryResInputGPU = mRec->RegisterMemoryAllocation(this, &GPUTPCDecompression::SetPointersInputGPU, GPUMemoryResource::MEMORY_INPUT_FLAG | GPUMemoryResource::MEMORY_GPU | GPUMemoryResource::MEMORY_CUSTOM, "TPCDecompressionInput");
 }
 
 void GPUTPCDecompression::SetMaxData(const GPUTrackingInOutPointers& io){
