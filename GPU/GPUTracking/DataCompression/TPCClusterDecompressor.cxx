@@ -77,12 +77,6 @@ int TPCClusterDecompressor::decompress(const CompressedClusters* clustersCompres
       decodedAttachedClusters += clusters[i][j].size();
     }
   }
-  unsigned int avgAttCl = 0;
-  for(unsigned int i = 0; i < NSLICES; i++)
-    for (unsigned int j=0; j < GPUCA_ROW_COUNT; j++)
-      avgAttCl += clusters[i][j].size();
-  avgAttCl/=(NSLICES*GPUCA_ROW_COUNT);
-  LOGP(info,"===== avg on Host: {}",avgAttCl);
   if (decodedAttachedClusters != clustersCompressed->nAttachedClusters) {
     GPUWarning("%u / %u clusters failed track model decoding (%f %%)", clustersCompressed->nAttachedClusters - decodedAttachedClusters, clustersCompressed->nAttachedClusters, 100.f * (float)(clustersCompressed->nAttachedClusters - decodedAttachedClusters) / (float)clustersCompressed->nAttachedClusters);
   }
