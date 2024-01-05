@@ -124,6 +124,40 @@ GPUdii() ClusterNative GPUTPCDecompressionKernels::decompressTrackStore(const o2
   }
   return c;
 }
+
+template <>
+GPUdii() void GPUTPCDecompressionKernels::Thread<GPUTPCDecompressionKernels::step1unattached>(int nBlocks, int nThreads, int iBlock, int iThread, GPUsharedref() GPUSharedMemory& smem, processorType& processors){
+  GPUTPCDecompression& GPUrestrict() decompressor = processors.tpcDecompressor;
+  const ClusterNative* GPUrestrict() clusterBuffer = processors.ioPtrs.clustersNative->clustersLinear;
+  unsigned int* offsets = decompressor.mUnattachedClustersOffsets;
+  for (unsigned int i = get_global_id(0); i < GPUCA_NSLICES * GPUCA_ROW_COUNT; i += get_global_size(0)){
+    unsigned int slice = i / GPUCA_ROW_COUNT;
+    unsigned int row = i % GPUCA_ROW_COUNT;
+    unsigned int tmpBufferIndex = computeLinearTmpBufferIndex(slice,row,decompressor.mMaxNativeClustersPerBuffer);
+    const ClusterNative* buffer = clusterBuffer + processors.ioPtrs.clustersNative->clusterOffset[slice][row];
+    if (decompressor.mNativeClustersIndex[i] != 0) {
+      memcpy((void*)buffer, (const void*)(decompressor.mTmpNativeClusters + tmpBufferIndex), decompressor.mNativeClustersIndex[i] * sizeof(clusterBuffer[0]));
+    }
+    const ClusterNative* clout = buffer + decompressor.mNativeClustersIndex[i];
+    unsigned int end = offsets[i] + ((i >= decompressor.mInputGPU.nSliceRows) ? 0 : decompressor.mInputGPU.nSliceRowClusters[i]);
+    //decompressHits(clustersCompressed, offsets[i][j], end, clout);
+    if (processors.param.rec.tpc.clustersShiftTimebins != 0.f) {
+      for (unsigned int k = 0; k < processors.ioPtrs.clustersNative->nClusters[slice][row]; k++) {
+        auto& cl = buffer[k];
+        float t = cl.getTime() + processors.param.rec.tpc.clustersShiftTimebins;
+        if (t < 0) {
+          t = 0;
+        }
+        if (processors.param.par.continuousMaxTimeBin > 0 && t > processors.param.par.continuousMaxTimeBin) {
+          t = processors.param.par.continuousMaxTimeBin;
+        }
+        cl.setTime(t);
+      }
+    }
+    //std::sort(buffer, buffer + clustersNative.nClusters[i][j]);
+  }
+
+}
 /*
 template <>
 GPUdii() void GPUTPCDecompressionKernels::Thread<GPUTPCDecompressionKernels::prepareAccess>(int nBlocks, int nThreads, int iBlock, int iThread, GPUsharedref() GPUSharedMemory& smem, processorType& processors){
