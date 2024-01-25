@@ -131,12 +131,14 @@ GPUdii() void GPUTPCDecompressionKernels::Thread<GPUTPCDecompressionKernels::ste
   GPUTPCDecompression& GPUrestrict() decompressor = processors.tpcDecompressor;
   CompressedClusters& GPUrestrict() cmprClusters = decompressor.mInputGPU;
   ClusterNative* GPUrestrict() clusterBuffer = decompressor.mNativeClustersBuffer;
+  const ClusterNativeAccess* outputAccess = processors.ioPtrs.clustersNative;
+
   unsigned int* offsets = decompressor.mUnattachedClustersOffsets;
   for (unsigned int i = get_global_id(0); i < GPUCA_NSLICES * GPUCA_ROW_COUNT; i += get_global_size(0)){
     unsigned int slice = i / GPUCA_ROW_COUNT;
     unsigned int row = i % GPUCA_ROW_COUNT;
     unsigned int tmpBufferIndex = computeLinearTmpBufferIndex(slice,row,decompressor.mMaxNativeClustersPerBuffer);
-    ClusterNative* buffer = clusterBuffer + processors.ioPtrs.clustersNative->clusterOffset[slice][row];
+    ClusterNative* buffer = clusterBuffer + outputAccess->clusterOffset[slice][row];
     if (decompressor.mNativeClustersIndex[i] != 0) {
       memcpy((void*)buffer, (const void*)(decompressor.mTmpNativeClusters + tmpBufferIndex), decompressor.mNativeClustersIndex[i] * sizeof(clusterBuffer[0]));
     }
@@ -144,7 +146,7 @@ GPUdii() void GPUTPCDecompressionKernels::Thread<GPUTPCDecompressionKernels::ste
     unsigned int end = offsets[i] + ((i >= decompressor.mInputGPU.nSliceRows) ? 0 : decompressor.mInputGPU.nSliceRowClusters[i]);
     decompressHits(cmprClusters, offsets[i], end, clout);
     if (processors.param.rec.tpc.clustersShiftTimebins != 0.f) {
-      for (unsigned int k = 0; k < processors.ioPtrs.clustersNative->nClusters[slice][row]; k++) {
+      for (unsigned int k = 0; k < outputAccess->nClusters[slice][row]; k++) {
         auto& cl = buffer[k];
         float t = cl.getTime() + processors.param.rec.tpc.clustersShiftTimebins;
         if (t < 0) {
@@ -156,7 +158,7 @@ GPUdii() void GPUTPCDecompressionKernels::Thread<GPUTPCDecompressionKernels::ste
         cl.setTime(t);
       }
     }
-    GPUCommonAlgorithm::sort(buffer, buffer + processors.ioPtrs.clustersNative->nClusters[slice][row]);
+    GPUCommonAlgorithm::sort(buffer, buffer + outputAccess->nClusters[slice][row]);
   }
 
 }
