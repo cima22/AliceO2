@@ -41,7 +41,7 @@ class GPUTPCDecompressionKernels : public GPUKernelTemplate
   enum K : int {
     step0attached = 0,
     step1unattached = 1,
-    prepareAccess = 2
+    //prepareAccess = 2
   };
 
   template <int iKernel = defaultKernel>

@@ -67,7 +67,6 @@ void GPUTPCDecompression::SetPointersCompressedClusters(void*& mem, T& c, unsign
 
 void* GPUTPCDecompression::SetPointersTmpNativeBuffersGPU(void* mem){
   computePointerWithAlignment(mem,mTmpNativeClusters,NSLICES * GPUCA_ROW_COUNT * mMaxNativeClustersPerBuffer);
-  //computePointerWithAlignment(mem,mClusterNativeAccess);
   return mem;
 }
 
@@ -93,17 +92,3 @@ void GPUTPCDecompression::SetMaxData(const GPUTrackingInOutPointers& io){
   //mMaxNativeClustersPerBuffer = 81760;
   mMaxNativeClustersPerBuffer = 12000;
 }
-/*
-GPUTPCDecompression::ConcurrentClusterNativeBuffer::ConcurrentClusterNativeBuffer():
-mCmprClsBuffer{new o2::tpc::ClusterNative[mCapacity]},mIndex{0}
-{}
-
-void GPUTPCDecompression::ConcurrentClusterNativeBuffer::push_back(tpc::ClusterNative cluster)
-{
-  if(mIndex == mCapacity){
-    //reallocate?
-    return;
-  }
-  unsigned int current = CAMath::AtomicAdd(mIndex, 1u);
-  mTmpNativeClusters[current] = cluster;
-}*/

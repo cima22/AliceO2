@@ -338,9 +338,6 @@ int GPUChainTracking::RunTPCDecompression()
   };
   auto& gatherTimer = getTimer<TPCClusterDecompressor>("TPCDecompression", 0);
   gatherTimer.Start();
-
-  LOGP(info,"==== mIOPtrs.compressed.nAttCl = {}, nUnAttCl = {}, nTracks = {}",cmprClsHost.nAttachedClusters,cmprClsHost.nUnattachedClusters,cmprClsHost.nTracks);
-
   if (decomp.decompress(mIOPtrs.tpcCompressedClusters, *mClusterNativeAccess, allocator, param())) {
     GPUError("Error decompressing clusters");
     return 1;

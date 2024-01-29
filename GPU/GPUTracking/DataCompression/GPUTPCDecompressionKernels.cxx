@@ -17,6 +17,7 @@
 #include "GPUConstantMem.h"
 #include "GPUTPCCompressionTrackModel.h"
 #include "GPUCommonAlgorithm.h"
+#include <string.h>
 
 using namespace GPUCA_NAMESPACE::gpu;
 using namespace o2::tpc;
