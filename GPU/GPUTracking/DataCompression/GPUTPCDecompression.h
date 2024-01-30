@@ -73,7 +73,6 @@ class GPUTPCDecompression : public GPUProcessor
   short mMemoryResInputGPU = -1;
   short mResourceTmpIndexes = -1;
   short mResourceTmpClustersOffsets = -1;
-
 };
 } // namespace GPUCA_NAMESPACE::gpu
 #endif // GPUTPCDECOMPRESSION_H

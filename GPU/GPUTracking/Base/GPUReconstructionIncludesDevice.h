@@ -75,7 +75,7 @@ using namespace GPUCA_NAMESPACE::gpu;
 #include "GPUTPCCompressionKernels.cxx"
 #include "GPUTPCCompressionTrackModel.cxx"
 
-//Files for TPC Decompression
+// Files for TPC Decompression
 #include "GPUTPCDecompressionKernels.cxx"
 
 // Files for TPC Cluster Finder

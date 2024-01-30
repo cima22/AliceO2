@@ -206,11 +206,11 @@ int GPUChainTracking::RunTPCCompression()
 int GPUChainTracking::RunTPCDecompression()
 {
 #ifdef GPUCA_HAVE_O2HEADERS
- // mRec->PushNonPersistentMemory(qStr2Tag("TPCDCMPR"));
+  // mRec->PushNonPersistentMemory(qStr2Tag("TPCDCMPR"));
   ClusterNativeAccess* original = new ClusterNativeAccess;
   original->clustersLinear = new ClusterNative[mIOPtrs.clustersNative->nClustersTotal];
-  memcpy((void*)original->clustersLinear,mIOPtrs.clustersNative->clustersLinear,mIOPtrs.clustersNative->nClustersTotal*sizeof(mIOPtrs.clustersNative->clustersLinear[0]));
-  memcpy((void*)original->nClusters,mIOPtrs.clustersNative->nClusters,NSLICES*GPUCA_ROW_COUNT*sizeof(mIOPtrs.clustersNative->nClusters[0][0]));
+  memcpy((void*)original->clustersLinear, mIOPtrs.clustersNative->clustersLinear, mIOPtrs.clustersNative->nClustersTotal * sizeof(mIOPtrs.clustersNative->clustersLinear[0]));
+  memcpy((void*)original->nClusters, mIOPtrs.clustersNative->nClusters, NSLICES * GPUCA_ROW_COUNT * sizeof(mIOPtrs.clustersNative->nClusters[0][0]));
   original->setOffsetPtrs();
 
   RecoStep myStep = RecoStep::TPCDecompression;
@@ -289,12 +289,12 @@ int GPUChainTracking::RunTPCDecompression()
       decodedAttachedClusters += Decompressor.mNativeClustersIndex[linearIndex];
     }
   }
-  LOGP(info,"decoded = {}",decodedAttachedClusters);
-  TransferMemoryResourceLinkToGPU(RecoStep::TPCDecompression,Decompressor.mResourceTmpClustersOffsets,0);
+  LOGP(info, "decoded = {}", decodedAttachedClusters);
+  TransferMemoryResourceLinkToGPU(RecoStep::TPCDecompression, Decompressor.mResourceTmpClustersOffsets, 0);
   if (decodedAttachedClusters != cmprClsHost.nAttachedClusters) {
-         GPUWarning("My version: %u / %u clusters failed track model decoding (%f %%)", cmprClsHost.nAttachedClusters - decodedAttachedClusters, cmprClsHost.nAttachedClusters, 100.f * (float)(cmprClsHost.nAttachedClusters - decodedAttachedClusters) / (float)cmprClsHost.nAttachedClusters);
+    GPUWarning("My version: %u / %u clusters failed track model decoding (%f %%)", cmprClsHost.nAttachedClusters - decodedAttachedClusters, cmprClsHost.nAttachedClusters, 100.f * (float)(cmprClsHost.nAttachedClusters - decodedAttachedClusters) / (float)cmprClsHost.nAttachedClusters);
   } else {
-         GPUInfo("My version: all attached clusters have been decoded");
+    GPUInfo("My version: all attached clusters have been decoded");
   }
 
   Decompressor.mNativeClustersBuffer = mInputsHost->mPclusterNativeOutput;
@@ -317,14 +317,14 @@ int GPUChainTracking::RunTPCDecompression()
   ClusterNative* tmpBuffer = new ClusterNative[mInputsHost->mNClusterNative];
   ClusterNativeAccess gpuBuffer = *mInputsHost->mPclusterNativeAccess;
   gpuBuffer.clustersLinear = tmpBuffer;
-  //GPUMemCpy(RecoStep::TPCDecompression,mInputsHost->mPclusterNativeOutput,mInputsShadow->mPclusterNativeBuffer, sizeof(mInputsShadow->mPclusterNativeBuffer[0]) * mIOPtrs.clustersNative->nClustersTotal,0,false);
-  GPUMemCpy(RecoStep::TPCDecompression,tmpBuffer,mInputsShadow->mPclusterNativeBuffer, sizeof(mInputsShadow->mPclusterNativeBuffer[0]) * mIOPtrs.clustersNative->nClustersTotal,0,false);
+  // GPUMemCpy(RecoStep::TPCDecompression,mInputsHost->mPclusterNativeOutput,mInputsShadow->mPclusterNativeBuffer, sizeof(mInputsShadow->mPclusterNativeBuffer[0]) * mIOPtrs.clustersNative->nClustersTotal,0,false);
+  GPUMemCpy(RecoStep::TPCDecompression, tmpBuffer, mInputsShadow->mPclusterNativeBuffer, sizeof(mInputsShadow->mPclusterNativeBuffer[0]) * mIOPtrs.clustersNative->nClustersTotal, 0, false);
   gpuBuffer.setOffsetPtrs();
 
   TPCClusterDecompressor decomp;
   auto allocator = [this](size_t size) {
     this->mInputsHost->mNClusterNative = this->mInputsShadow->mNClusterNative = size;
-    //this->AllocateRegisteredMemory(this->mInputsHost->mResourceClusterNativeOutput, this->mSubOutputControls[GPUTrackingOutputs::getIndex(&GPUTrackingOutputs::clustersNative)]);
+    // this->AllocateRegisteredMemory(this->mInputsHost->mResourceClusterNativeOutput, this->mSubOutputControls[GPUTrackingOutputs::getIndex(&GPUTrackingOutputs::clustersNative)]);
     return this->mInputsHost->mPclusterNativeOutput;
   };
   auto& gatherTimer = getTimer<TPCClusterDecompressor>("TPCDecompression", 0);
@@ -336,7 +336,7 @@ int GPUChainTracking::RunTPCDecompression()
   gatherTimer.Stop();
   mIOPtrs.clustersNative = mClusterNativeAccess.get();
   if (mRec->IsGPU()) {
-    //AllocateRegisteredMemory(mInputsHost->mResourceClusterNativeBuffer);
+    // AllocateRegisteredMemory(mInputsHost->mResourceClusterNativeBuffer);
     processorsShadow()->ioPtrs.clustersNative = mInputsShadow->mPclusterNativeAccess;
     WriteToConstantMemory(RecoStep::TPCDecompression, (char*)&processors()->ioPtrs - (char*)processors(), &processorsShadow()->ioPtrs, sizeof(processorsShadow()->ioPtrs), 0);
     *mInputsHost->mPclusterNativeAccess = *mIOPtrs.clustersNative;
@@ -347,8 +347,8 @@ int GPUChainTracking::RunTPCDecompression()
     SynchronizeStream(0);
   }
 
-  const ClusterNativeAccess* decoded = &gpuBuffer; //mIOPtrs.clustersNative;
- // original = (ClusterNativeAccess*)mIOPtrs.clustersNative;
+  const ClusterNativeAccess* decoded = &gpuBuffer; // mIOPtrs.clustersNative;
+  // original = (ClusterNativeAccess*)mIOPtrs.clustersNative;
   unsigned int decodingErrors = 0;
   std::vector<o2::tpc::ClusterNative> tmpClusters;
   if (param().rec.tpc.rejectionStrategy == GPUSettings::RejectionNone) { // verification does not make sense if we reject clusters during compression
@@ -375,8 +375,8 @@ int GPUChainTracking::RunTPCDecompression()
           const o2::tpc::ClusterNative& c2 = decoded->clusters[i][j][k];
           if (!(c1 == c2)) {
             if (decodingErrors++ < 100) {
-              //GPUWarning("Cluster mismatch: slice %2u row %3u hit %5u: %6d %3d %4d %3d %3d %4d %4d", i, j, k, (int)c1.getTimePacked(), (int)c1.getFlags(), (int)c1.padPacked, (int)c1.sigmaTimePacked, (int)c1.sigmaPadPacked, (int)c1.qMax, (int)c1.qTot);
-              //GPUWarning("%45s %6d %3d %4d %3d %3d %4d %4d", "", (int)c2.getTimePacked(), (int)c2.getFlags(), (int)c2.padPacked, (int)c2.sigmaTimePacked, (int)c2.sigmaPadPacked, (int)c2.qMax, (int)c2.qTot);
+              // GPUWarning("Cluster mismatch: slice %2u row %3u hit %5u: %6d %3d %4d %3d %3d %4d %4d", i, j, k, (int)c1.getTimePacked(), (int)c1.getFlags(), (int)c1.padPacked, (int)c1.sigmaTimePacked, (int)c1.sigmaPadPacked, (int)c1.qMax, (int)c1.qTot);
+              // GPUWarning("%45s %6d %3d %4d %3d %3d %4d %4d", "", (int)c2.getTimePacked(), (int)c2.getFlags(), (int)c2.padPacked, (int)c2.sigmaTimePacked, (int)c2.sigmaPadPacked, (int)c2.qMax, (int)c2.qTot);
             }
           }
         }
