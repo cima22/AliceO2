@@ -471,6 +471,7 @@ endif()
 set_source_files_properties(DataCompression/GPUTPCCompressionTrackModel.cxx
                             DataCompression/GPUTPCCompressionKernels.cxx
                             DataCompression/TPCClusterDecompressor.cxx
+                            DataCompression/GPUTPCDecompressionKernels.cxx
                             TARGET_DIRECTORY ${targetName}
                             PROPERTIES COMPILE_FLAGS "-fno-fast-math -ffp-contract=off")
 

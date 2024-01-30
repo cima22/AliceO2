@@ -28,7 +28,6 @@ using namespace o2::tpc;
 
 int GPUChainTracking::RunTPCCompression()
 {
-  LOGP(info, "====== Compression");
 #ifdef GPUCA_HAVE_O2HEADERS
   mRec->PushNonPersistentMemory(qStr2Tag("TPCCOMPR"));
   RecoStep myStep = RecoStep::TPCCompression;
@@ -206,8 +205,6 @@ int GPUChainTracking::RunTPCCompression()
 
 int GPUChainTracking::RunTPCDecompression()
 {
-  LOGP(info, "====== Decompression");
-
 #ifdef GPUCA_HAVE_O2HEADERS
  // mRec->PushNonPersistentMemory(qStr2Tag("TPCDCMPR"));
   ClusterNativeAccess* original = new ClusterNativeAccess;
@@ -233,12 +230,6 @@ int GPUChainTracking::RunTPCDecompression()
   inputGPU.solenoidBz = param().bzkG;
   inputGPU.maxTimeBin = param().par.continuousMaxTimeBin;
   SetupGPUProcessor(&Decompressor, true);
-
-  for(int k = 0; k < cmprClsHost.nSliceRowClusters[0]; k++){
-    if(cmprClsHost.sigmaTimeU[k] == 14 && cmprClsHost.sigmaPadU[k] == 14 && cmprClsHost.qMaxU[k] == 88 && cmprClsHost.qTotU[k] == 160){
-    LOGP(info,"==== Cluster unattached [{}] sigmaTimeU: {} simgaPadU: {} qMaxU: {} qTotU: {}",k,cmprClsHost.sigmaTimeU[k],cmprClsHost.sigmaPadU[k],cmprClsHost.qMaxU[k],cmprClsHost.qTotU[k]);
-    }
-  }
 
   size_t copySize = AllocateRegisteredMemory(Decompressor.mMemoryResInputGPU);
   WriteToConstantMemory(myStep, (char*)&processors()->tpcDecompressor - (char*)processors(), &DecompressorShadow, sizeof(DecompressorShadow), 0);
@@ -384,8 +375,8 @@ int GPUChainTracking::RunTPCDecompression()
           const o2::tpc::ClusterNative& c2 = decoded->clusters[i][j][k];
           if (!(c1 == c2)) {
             if (decodingErrors++ < 100) {
-              GPUWarning("Cluster mismatch: slice %2u row %3u hit %5u: %6d %3d %4d %3d %3d %4d %4d", i, j, k, (int)c1.getTimePacked(), (int)c1.getFlags(), (int)c1.padPacked, (int)c1.sigmaTimePacked, (int)c1.sigmaPadPacked, (int)c1.qMax, (int)c1.qTot);
-              GPUWarning("%45s %6d %3d %4d %3d %3d %4d %4d", "", (int)c2.getTimePacked(), (int)c2.getFlags(), (int)c2.padPacked, (int)c2.sigmaTimePacked, (int)c2.sigmaPadPacked, (int)c2.qMax, (int)c2.qTot);
+              //GPUWarning("Cluster mismatch: slice %2u row %3u hit %5u: %6d %3d %4d %3d %3d %4d %4d", i, j, k, (int)c1.getTimePacked(), (int)c1.getFlags(), (int)c1.padPacked, (int)c1.sigmaTimePacked, (int)c1.sigmaPadPacked, (int)c1.qMax, (int)c1.qTot);
+              //GPUWarning("%45s %6d %3d %4d %3d %3d %4d %4d", "", (int)c2.getTimePacked(), (int)c2.getFlags(), (int)c2.padPacked, (int)c2.sigmaTimePacked, (int)c2.sigmaPadPacked, (int)c2.qMax, (int)c2.qTot);
             }
           }
         }

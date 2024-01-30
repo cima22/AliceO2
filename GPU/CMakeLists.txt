@@ -18,7 +18,7 @@
 # HDRS_CINT_O2: Headers for ROOT dictionary (only for O2) HDRS_INSTALL: Headers
 # for installation only
 
-set(CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE} "${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}} -fno-omit-frame-pointer") # to uncomment if needed, tired of typing this...
+#set(CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE} "${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}} -fno-omit-frame-pointer") # to uncomment if needed, tired of typing this...
 
 if(NOT DEFINED GPUCA_NO_FAST_MATH)
   set(GPUCA_NO_FAST_MATH 1)
