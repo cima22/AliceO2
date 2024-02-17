@@ -27,6 +27,9 @@ set(GPUCA_NO_FAST_MATH 1)
 # Would better fit inside GPU/CMakeLists.txt, but include GPU/Common directly
 set(ALIGPU_BUILD_TYPE "O2")
 
+set(GPUCA_NO_FAST_MATH 1)
+set(CUDA_COMPUTETARGET 75)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 set_property(GLOBAL PROPERTY REPORT_UNDEFINED_PROPERTIES)
 

@@ -80,6 +80,11 @@ int TPCClusterDecompressor::decompress(const CompressedClusters* clustersCompres
   if (decodedAttachedClusters != clustersCompressed->nAttachedClusters) {
     GPUWarning("%u / %u clusters failed track model decoding (%f %%)", clustersCompressed->nAttachedClusters - decodedAttachedClusters, clustersCompressed->nAttachedClusters, 100.f * (float)(clustersCompressed->nAttachedClusters - decodedAttachedClusters) / (float)clustersCompressed->nAttachedClusters);
   }
+  unsigned int max = 0;
+  for (unsigned int i = 0; i < NSLICES; i++)
+    for (unsigned int j = 0; j < GPUCA_ROW_COUNT; j++)
+      max = clusters[i][j].size() > max ? clusters[i][j].size() : max;
+  LOGP(info, "Maximum is: {}",max);
   clustersNative.clustersLinear = clusterBuffer;
   clustersNative.setOffsetPtrs();
   GPUCA_OPENMP(parallel for)
