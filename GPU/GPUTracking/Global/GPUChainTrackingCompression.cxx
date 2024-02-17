@@ -303,16 +303,11 @@ int GPUChainTracking::RunTPCDecompression()
   processors()->ioPtrs.clustersNative = mInputsHost->mPclusterNativeAccess;
 
   runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step1unattached>(GetGridAutoStep(inputStream, RecoStep::TPCDecompression), krnlRunRangeNone, krnlEventNone);
+  SynchronizeStream(inputStream);
+    GPUMemCpy(RecoStep::TPCDecompression, (void*)mInputsHost->mPclusterNativeOutput,(void*) mInputsShadow->mPclusterNativeBuffer, sizeof(mInputsShadow->mPclusterNativeBuffer[0]) * mIOPtrs.clustersNative->nClustersTotal, inputStream, false);
 
-  GPUMemCpy(RecoStep::TPCDecompression, (void*)mInputsHost->mPclusterNativeOutput,(void*) mInputsShadow->mPclusterNativeBuffer, sizeof(mInputsShadow->mPclusterNativeBuffer[0]) * mIOPtrs.clustersNative->nClustersTotal, inputStream, false);
   mIOPtrs.clustersNative = mClusterNativeAccess.get();
 
-  ClusterNative* tmpBuffer = new ClusterNative[mInputsHost->mNClusterNative];
-  ClusterNativeAccess gpuBuffer = *mInputsHost->mPclusterNativeAccess;
-  gpuBuffer.clustersLinear = tmpBuffer;
-  GPUMemCpy(RecoStep::TPCDecompression,tmpBuffer,mInputsShadow->mPclusterNativeBuffer, sizeof(mInputsShadow->mPclusterNativeBuffer[0]) * mIOPtrs.clustersNative->nClustersTotal,0,false);
-
-  gpuBuffer.setOffsetPtrs();
   const ClusterNativeAccess* decoded = mInputsHost->mPclusterNativeAccess; //&gpuBuffer; mIOPtrs.clustersNative;
   unsigned int decodingErrors = 0;
   std::vector<o2::tpc::ClusterNative> tmpClusters;
@@ -353,7 +348,6 @@ int GPUChainTracking::RunTPCDecompression()
       GPUInfo("Cluster decoding verification on GPU: PASSED");
     }
   }
-delete[] tmpBuffer;
 #endif
   return 0;
 }
