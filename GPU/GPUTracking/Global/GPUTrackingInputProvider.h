@@ -91,7 +91,7 @@ class GPUTrackingInputProvider : public GPUProcessor
 
   unsigned int* mErrorCodes = nullptr;
 
-  bool mNewGPURecoTPCDecoding = false;
+  bool mNewGPURecoTPCDecoding = true;
 };
 
 } // namespace gpu
