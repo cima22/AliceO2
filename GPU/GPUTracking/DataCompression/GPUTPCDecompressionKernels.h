@@ -54,6 +54,9 @@ class GPUTPCDecompressionKernels : public GPUKernelTemplate
   {
     return slice * (GPUCA_ROW_COUNT * maxClustersPerBuffer) + row * maxClustersPerBuffer;
   }
+
+  template <typename T>
+  GPUdi() static void decompressorMemcpyBasic(T* dst, const T* src, unsigned int size);
 };
 
 } // namespace GPUCA_NAMESPACE::gpu

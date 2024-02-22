@@ -303,7 +303,7 @@ int GPUChainTracking::RunTPCDecompression()
   *mInputsHost->mPclusterNativeAccess = *mIOPtrs.clustersNative;
   processors()->ioPtrs.clustersNative = mInputsHost->mPclusterNativeAccess;
 
-  runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step1unattached>(GetGridAutoStep(inputStream, RecoStep::TPCDecompression), krnlRunRangeNone, krnlEventNone);
+  runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step1unattached>(GetGridAuto(inputStream), krnlRunRangeNone, krnlEventNone);
   SynchronizeStream(inputStream);
   GPUMemCpy(RecoStep::TPCDecompression, (void*)mInputsHost->mPclusterNativeOutput, (void*)mInputsShadow->mPclusterNativeBuffer, sizeof(mInputsShadow->mPclusterNativeBuffer[0]) * mIOPtrs.clustersNative->nClustersTotal, inputStream, false);
 
