@@ -59,5 +59,16 @@ class GPUTPCDecompressionKernels : public GPUKernelTemplate
   GPUdi() static void decompressorMemcpyBasic(T* dst, const T* src, unsigned int size);
 };
 
+class GPUTPCDecompressionUtilKernels : public GPUKernelTemplate
+{
+ public:
+  enum K : int {
+    sortPerSectorRow = 0
+  };
+
+  template <int iKernel = defaultKernel>
+  GPUd() static void Thread(int nBlocks, int nThreads, int iBlock, int iThread, GPUsharedref() GPUSharedMemory& smem, processorType& GPUrestrict() processors);
+};
+
 } // namespace GPUCA_NAMESPACE::gpu
 #endif // GPUTPCDECOMPRESSIONKERNELS_H

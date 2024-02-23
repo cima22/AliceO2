@@ -304,15 +304,18 @@ int GPUChainTracking::RunTPCDecompression()
   processors()->ioPtrs.clustersNative = mInputsHost->mPclusterNativeAccess;
 
   runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step1unattached>(GetGridAuto(inputStream), krnlRunRangeNone, krnlEventNone);
+  if (GetProcessingSettings().deterministicGPUReconstruction || 1) {
+    runKernel<GPUTPCDecompressionUtilKernels, GPUTPCDecompressionUtilKernels::sortPerSectorRow>(GetGridAutoStep(inputStream, RecoStep::TPCDecompression), krnlRunRangeNone, krnlEventNone);
+  }
   SynchronizeStream(inputStream);
   GPUMemCpy(RecoStep::TPCDecompression, (void*)mInputsHost->mPclusterNativeOutput, (void*)mInputsShadow->mPclusterNativeBuffer, sizeof(mInputsShadow->mPclusterNativeBuffer[0]) * mIOPtrs.clustersNative->nClustersTotal, inputStream, false);
 
   mIOPtrs.clustersNative = mClusterNativeAccess.get();
   
-  const ClusterNativeAccess* decoded = mInputsHost->mPclusterNativeAccess; //&gpuBuffer; mIOPtrs.clustersNative;
+  const ClusterNativeAccess* decoded = mInputsHost->mPclusterNativeAccess;
   unsigned int decodingErrors = 0;
   std::vector<o2::tpc::ClusterNative> tmpClusters;
-  if (param().rec.tpc.rejectionStrategy == GPUSettings::RejectionNone) { // verification does not make sense if we reject clusters during compression
+  if (param().rec.tpc.rejectionStrategy == GPUSettings::RejectionNone) {
    for (unsigned int i = 0; i < NSLICES; i++) {
     for (unsigned int j = 0; j < GPUCA_ROW_COUNT; j++) {
      if (original->nClusters[i][j] != decoded->nClusters[i][j]) {
