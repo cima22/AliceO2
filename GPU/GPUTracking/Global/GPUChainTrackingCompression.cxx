@@ -207,11 +207,11 @@ int GPUChainTracking::RunTPCDecompression()
 {
 #ifdef GPUCA_HAVE_O2HEADERS
   mRec->PushNonPersistentMemory(qStr2Tag("TPCDCMPR"));
-  ClusterNativeAccess* original = new ClusterNativeAccess;
+/*  ClusterNativeAccess* original = new ClusterNativeAccess;
   original->clustersLinear = new ClusterNative[mIOPtrs.clustersNative->nClustersTotal];
   memcpy((void*)original->clustersLinear, mIOPtrs.clustersNative->clustersLinear, mIOPtrs.clustersNative->nClustersTotal * sizeof(mIOPtrs.clustersNative->clustersLinear[0]));
   memcpy((void*)original->nClusters, mIOPtrs.clustersNative->nClusters, NSLICES * GPUCA_ROW_COUNT * sizeof(mIOPtrs.clustersNative->nClusters[0][0]));
-  original->setOffsetPtrs();
+  original->setOffsetPtrs();*/
   RecoStep myStep = RecoStep::TPCDecompression;
   bool doGPU = GetRecoStepsGPU() & RecoStep::TPCDecompression;
   GPUTPCDecompression& Decompressor = processors()->tpcDecompressor;
@@ -304,14 +304,14 @@ int GPUChainTracking::RunTPCDecompression()
   processors()->ioPtrs.clustersNative = mInputsHost->mPclusterNativeAccess;
 
   runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step1unattached>(GetGridAuto(inputStream), krnlRunRangeNone, krnlEventNone);
-  if (GetProcessingSettings().deterministicGPUReconstruction || 1) {
+  if (GetProcessingSettings().deterministicGPUReconstruction) {
     runKernel<GPUTPCDecompressionUtilKernels, GPUTPCDecompressionUtilKernels::sortPerSectorRow>(GetGridAutoStep(inputStream, RecoStep::TPCDecompression), krnlRunRangeNone, krnlEventNone);
   }
   SynchronizeStream(inputStream);
   GPUMemCpy(RecoStep::TPCDecompression, (void*)mInputsHost->mPclusterNativeOutput, (void*)mInputsShadow->mPclusterNativeBuffer, sizeof(mInputsShadow->mPclusterNativeBuffer[0]) * mIOPtrs.clustersNative->nClustersTotal, inputStream, false);
 
   mIOPtrs.clustersNative = mClusterNativeAccess.get();
-  
+  /*
   const ClusterNativeAccess* decoded = mInputsHost->mPclusterNativeAccess;
   unsigned int decodingErrors = 0;
   std::vector<o2::tpc::ClusterNative> tmpClusters;
@@ -353,7 +353,7 @@ if (decodingErrors) {
  }
 }
   delete[] original->clustersLinear;
-  delete original;
+  delete original;*/
   mRec->PopNonPersistentMemory(RecoStep::TPCDecompression, qStr2Tag("TPCDCMPR"));
 #endif
   return 0;
