@@ -196,7 +196,7 @@ GPUdi() void GPUTPCDecompressionKernels::decompressorMemcpyBasic(T* GPUrestrict(
 }
 
 template <>
-GPUdii() void GPUTPCDecompressionUtilKernels::Thread(int nBlocks, int nThreads, int iBlock, int iThread, GPUsharedref() GPUSharedMemory& smem, processorType& processors)
+GPUdii() void GPUTPCDecompressionUtilKernels::Thread<GPUTPCDecompressionUtilKernels::sortPerSectorRow>(int nBlocks, int nThreads, int iBlock, int iThread, GPUsharedref() GPUSharedMemory& smem, processorType& processors)
 {
   ClusterNative* GPUrestrict() clusterBuffer = processors.tpcDecompressor.mNativeClustersBuffer;
   const ClusterNativeAccess* outputAccess = processors.ioPtrs.clustersNative;
