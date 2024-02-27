@@ -163,7 +163,7 @@ GPUdii() void GPUTPCDecompressionKernels::Thread<GPUTPCDecompressionKernels::ste
         cl.setTime(t);
       }
     }
-//    GPUCommonAlgorithm::sort(buffer, buffer + outputAccess->nClusters[slice][row]);
+    //    GPUCommonAlgorithm::sort(buffer, buffer + outputAccess->nClusters[slice][row]);
   }
 }
 
@@ -190,7 +190,7 @@ GPUdii() void GPUTPCDecompressionKernels::decompressHits(const o2::tpc::Compress
 template <typename T>
 GPUdi() void GPUTPCDecompressionKernels::decompressorMemcpyBasic(T* GPUrestrict() dst, const T* GPUrestrict() src, unsigned int size)
 {
-  for (unsigned int i = 0; i < size; i ++) {
+  for (unsigned int i = 0; i < size; i++) {
     dst[i] = src[i];
   }
 }
