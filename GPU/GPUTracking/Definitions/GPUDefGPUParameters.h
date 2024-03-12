@@ -199,6 +199,8 @@
   #define GPUCA_LB_GPUTPCGMMergerFinalize_2 256
   #define GPUCA_LB_GPUTPCCompressionKernels_step0attached 64, 2
   #define GPUCA_LB_GPUTPCCompressionKernels_step1unattached 512, 3
+  #define GPUCA_LB_GPUTPCDecompressionKernels_step0attached 128, 2
+  #define GPUCA_LB_GPUTPCDecompressionKernels_step1unattached 288, 2
   #define GPUCA_LB_GPUTPCCFCheckPadBaseline 64,8
   #define GPUCA_LB_GPUTPCCFChargeMapFiller_fillIndexMap 448
   #define GPUCA_LB_GPUTPCCFChargeMapFiller_fillFromDigits 448
