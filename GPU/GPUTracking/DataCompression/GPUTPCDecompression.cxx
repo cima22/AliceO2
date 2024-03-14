@@ -68,6 +68,7 @@ void GPUTPCDecompression::SetPointersCompressedClusters(void*& mem, T& c, unsign
 void* GPUTPCDecompression::SetPointersTmpNativeBuffersGPU(void* mem)
 {
   computePointerWithAlignment(mem, mTmpNativeClusters, NSLICES * GPUCA_ROW_COUNT * mMaxNativeClustersPerBuffer);
+  computePointerWithAlignment(mem, mTmpUnattachedNativeClusters, mInputGPU.nUnattachedClusters);
   return mem;
 }
 

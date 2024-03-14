@@ -338,6 +338,9 @@
   #ifndef GPUCA_LB_GPUTPCDecompressionKernels_step1unattached
     #define GPUCA_LB_GPUTPCDecompressionKernels_step1unattached 256
   #endif
+#ifndef GPUCA_LB_GPUTPCDecompressionUtilKernels_gatherOutputs
+    #define GPUCA_LB_GPUTPCDecompressionUtilKernels_gatherOutputs 256
+#endif
   #ifndef GPUCA_LB_GPUTPCDecompressionUtilKernels_sortPerSectorRow
     #define GPUCA_LB_GPUTPCDecompressionUtilKernels_sortPerSectorRow 256
   #endif
