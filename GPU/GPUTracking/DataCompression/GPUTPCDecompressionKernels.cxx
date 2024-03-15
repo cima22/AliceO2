@@ -28,15 +28,10 @@ GPUdii() void GPUTPCDecompressionKernels::Thread<GPUTPCDecompressionKernels::ste
   CompressedClusters& GPUrestrict() cmprClusters = decompressor.mInputGPU;
   const GPUParam& GPUrestrict() param = processors.param;
 
-  unsigned int offset = 0, lasti = 0;
   const unsigned int maxTime = (param.par.continuousMaxTimeBin + 1) * ClusterNative::scaleTimePacked - 1;
 
   for (unsigned int i = get_global_id(0); i < cmprClusters.nTracks; i += get_global_size(0)) {
-    while (lasti < i) {
-      offset += cmprClusters.nTrackClusters[lasti++];
-    }
-    lasti++;
-    decompressTrack(cmprClusters, param, maxTime, i, offset, decompressor);
+    decompressTrack(cmprClusters, param, maxTime, i, decompressor.mAttachedClustersOffsets[i], decompressor);
   }
 }
 
@@ -172,16 +167,10 @@ GPUdii() void GPUTPCDecompressionKernels::Thread<GPUTPCDecompressionKernels::ste
   GPUTPCDecompression& GPUrestrict() decompressor = processors.tpcDecompressor;
   CompressedClusters& GPUrestrict() cmprClusters = decompressor.mInputGPU;
 
-  unsigned int offset = 0, lasti = 0;
   for (unsigned int i = get_global_id(0); i < GPUCA_NSLICES * GPUCA_ROW_COUNT; i += get_global_size(0)) {
-    while (lasti < i) {
-      offset += (lasti >= cmprClusters.nSliceRows) ? 0 : cmprClusters.nSliceRowClusters[lasti++];
-    }
-    decompressor.mUnattachedClustersOffsets[i] = offset;
-    lasti++;
-    ClusterNative* clout = decompressor.mTmpUnattachedNativeClusters + offset;
-    unsigned int end = offset + ((i >= decompressor.mInputGPU.nSliceRows) ? 0 : decompressor.mInputGPU.nSliceRowClusters[i]);
-    decompressHits(cmprClusters, offset, end, clout);
+    ClusterNative* clout = decompressor.mTmpUnattachedNativeClusters + decompressor.mUnattachedClustersOffsets[i];
+    unsigned int end = decompressor.mUnattachedClustersOffsets[i] + ((i >= cmprClusters.nSliceRows) ? 0 : cmprClusters.nSliceRowClusters[i]);
+    decompressHits(cmprClusters, decompressor.mUnattachedClustersOffsets[i], end, clout);
   }
 }
 

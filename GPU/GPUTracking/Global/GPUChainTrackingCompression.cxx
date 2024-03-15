@@ -16,6 +16,8 @@
 #include "GPULogging.h"
 #include "GPUO2DataTypes.h"
 #include "GPUTrackingInputProvider.h"
+#include <numeric>
+#include <chrono>
 
 #ifdef GPUCA_HAVE_O2HEADERS
 #include "GPUTPCCFChainContext.h"
@@ -206,7 +208,6 @@ int GPUChainTracking::RunTPCCompression()
 int GPUChainTracking::RunTPCDecompression()
 {
 //#ifdef GPUCA_HAVE_O2HEADERS
-
   if (GetProcessingSettings().tpcUseOldCPUDecoding) {
     const auto& threadContext = GetThreadContext();
     TPCClusterDecompressor decomp;
@@ -291,8 +292,11 @@ int GPUChainTracking::RunTPCDecompression()
     inputGPU.timeA = cmprClsHost.timeA;
     inputGPU.padA = cmprClsHost.padA;
 
+    std::exclusive_scan(cmprClsHost.nTrackClusters, cmprClsHost.nTrackClusters + cmprClsHost.nTracks, Decompressor.mAttachedClustersOffsets,0u);
+    GPUMemCpy(myStep, DecompressorShadow.mAttachedClustersOffsets, Decompressor.mAttachedClustersOffsets, cmprClsHost.nTracks * sizeof(Decompressor.mAttachedClustersOffsets[0]), attachedStream, toGPU);
+
     runKernel<GPUMemClean16>(GetGridAutoStep(attachedStream, RecoStep::TPCDecompression), krnlRunRangeNone, krnlEventNone, DecompressorShadow.mNativeClustersIndex, NSLICES * GPUCA_ROW_COUNT * sizeof(DecompressorShadow.mNativeClustersIndex[0]));
-    runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step0attached>(GetGridAuto(attachedStream), krnlRunRangeNone, krnlEventNone);
+    runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step0attached>({92,128,attachedStream}, krnlRunRangeNone, krnlEventNone);
 
     GPUMemCpy(myStep, inputGPUShadow.nSliceRowClusters, cmprClsHost.nSliceRowClusters, NSLICES * GPUCA_ROW_COUNT * sizeof(cmprClsHost.nSliceRowClusters[0]), unattachedStream, toGPU);
     GPUMemCpy(myStep, inputGPUShadow.qTotU, cmprClsHost.qTotU, cmprClsHost.nUnattachedClusters * sizeof(cmprClsHost.qTotU[0]), unattachedStream, toGPU);
@@ -311,8 +315,15 @@ int GPUChainTracking::RunTPCDecompression()
     inputGPU.sigmaPadU = cmprClsHost.sigmaPadU;
     inputGPU.sigmaTimeU = cmprClsHost.sigmaTimeU;
 
-    runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step1unattached>(GetGridAuto(unattachedStream), krnlRunRangeNone, &mEvents->stream[unattachedStream]);
-
+    std::exclusive_scan(cmprClsHost.nSliceRowClusters, cmprClsHost.nSliceRowClusters + (GPUCA_NSLICES * GPUCA_ROW_COUNT), Decompressor.mUnattachedClustersOffsets,0u);
+    GPUMemCpy(myStep, DecompressorShadow.mUnattachedClustersOffsets, Decompressor.mUnattachedClustersOffsets, (GPUCA_NSLICES * GPUCA_ROW_COUNT) * sizeof(Decompressor.mUnattachedClustersOffsets[0]), unattachedStream, toGPU);
+    SynchronizeStream(unattachedStream);
+    auto start = std::chrono::high_resolution_clock::now();
+    runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step1unattached>({46,64,unattachedStream}, krnlRunRangeNone, &mEvents->stream[unattachedStream]);
+    SynchronizeStream(unattachedStream);
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration = end - start;
+    LOGP(info,"Exec time: {} ms", duration.count() * 1e3);
     mInputsHost->mNClusterNative = mInputsShadow->mNClusterNative = cmprClsHost.nAttachedClusters + cmprClsHost.nUnattachedClusters;
     AllocateRegisteredMemory(mInputsHost->mResourceClusterNativeOutput, mSubOutputControls[GPUTrackingOutputs::getIndex(&GPUTrackingOutputs::clustersNative)]);
     AllocateRegisteredMemory(mInputsHost->mResourceClusterNativeBuffer);
