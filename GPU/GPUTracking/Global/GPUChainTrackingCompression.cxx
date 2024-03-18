@@ -359,8 +359,8 @@ int GPUChainTracking::RunTPCDecompression()
   }
 #endif
   auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> duration = end - start;
-      LOGP(info,"Exec time: {} ms", duration.count() * 1e3);
+  std::chrono::duration<double> duration = end - start;
+  LOGP(info,"Exec time: {} ms", duration.count() * 1e3);
   return 0;
 }
 
