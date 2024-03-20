@@ -16,6 +16,7 @@
 #include "GPULogging.h"
 #include "GPUO2DataTypes.h"
 #include "GPUTrackingInputProvider.h"
+#include <chrono>
 
 #ifdef GPUCA_HAVE_O2HEADERS
 #include "GPUTPCCFChainContext.h"
@@ -205,6 +206,7 @@ int GPUChainTracking::RunTPCCompression()
 
 int GPUChainTracking::RunTPCDecompression()
 {
+  auto start = std::chrono::high_resolution_clock::now();
 #ifdef GPUCA_HAVE_O2HEADERS
   if (GetProcessingSettings().tpcUseOldCPUDecoding) {
     const auto& threadContext = GetThreadContext();
@@ -357,5 +359,8 @@ int GPUChainTracking::RunTPCDecompression()
     mRec->PopNonPersistentMemory(RecoStep::TPCDecompression, qStr2Tag("TPCDCMPR"));
   }
 #endif
+  auto end = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> duration = end - start;
+  LOGP(info,"Exec time: {} ms", duration.count() * 1e3);
   return 0;
 }
