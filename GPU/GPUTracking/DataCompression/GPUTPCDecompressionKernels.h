@@ -45,7 +45,7 @@ class GPUTPCDecompressionKernels : public GPUKernelTemplate
 
   template <int iKernel = defaultKernel>
   GPUd() static void Thread(int nBlocks, int nThreads, int iBlock, int iThread, GPUsharedref() GPUSharedMemory& smem, processorType& GPUrestrict() processors);
-  GPUd() static void decompressTrack(o2::tpc::CompressedClusters& cmprClusters, const GPUParam& param, const unsigned int maxTime, const unsigned int trackIndex, unsigned int& clusterOffset, GPUTPCDecompression& decompressor);
+  GPUd() static void decompressTrack(o2::tpc::CompressedClusters& cmprClusters, const GPUParam& param, const unsigned int maxTime, const unsigned int trackIndex, unsigned int clusterOffset, GPUTPCDecompression& decompressor);
   GPUdi() static o2::tpc::ClusterNative decompressTrackStore(const o2::tpc::CompressedClusters& cmprClusters, const unsigned int clusterOffset, unsigned int slice, unsigned int row, unsigned int pad, unsigned int time, GPUTPCDecompression& decompressor);
   GPUdi() static void decompressHits(const o2::tpc::CompressedClusters& cmprClusters, const unsigned int start, const unsigned int end, o2::tpc::ClusterNative* clusterNativeBuffer);
 
@@ -62,7 +62,8 @@ class GPUTPCDecompressionUtilKernels : public GPUKernelTemplate
 {
  public:
   enum K : int {
-    sortPerSectorRow = 0
+    computeAttachedOffsets = 0,
+    sortPerSectorRow = 1,
   };
 
   template <int iKernel = defaultKernel>

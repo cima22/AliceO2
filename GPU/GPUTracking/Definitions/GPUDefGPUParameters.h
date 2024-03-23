@@ -341,6 +341,9 @@
   #ifndef GPUCA_LB_GPUTPCDecompressionUtilKernels_sortPerSectorRow
     #define GPUCA_LB_GPUTPCDecompressionUtilKernels_sortPerSectorRow 256
   #endif
+#ifndef GPUCA_LB_GPUTPCDecompressionUtilKernels_computeAttachedOffsets
+    #define GPUCA_LB_GPUTPCDecompressionUtilKernels_computeAttachedOffsets 256
+#endif
   #ifndef GPUCA_LB_GPUTPCCFDecodeZS
     #define GPUCA_LB_GPUTPCCFDecodeZS 128, 4
   #endif
