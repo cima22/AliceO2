@@ -313,7 +313,7 @@ int GPUChainTracking::RunTPCDecompression()
       GPUMemCpy(myStep, inputGPUShadow.timeA + startTrack, cmprClsHost.timeA + startTrack, numTracks * sizeof(cmprClsHost.timeA[0]), iStream, toGPU);
       GPUMemCpy(myStep, inputGPUShadow.padA + startTrack, cmprClsHost.padA + startTrack, numTracks * sizeof(cmprClsHost.padA[0]), iStream, toGPU);
 
-      runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step0attached>({46,64,iStream}, krnlRunRangeNone, {&mEvents->stream[iStream], &mEvents->init}, startTrack, endTrack);
+      runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step0attached>(GetGridAuto(iStream), krnlRunRangeNone, {&mEvents->stream[iStream], &mEvents->init}, startTrack, endTrack);
     }
 
     GPUMemCpy(myStep, inputGPUShadow.nSliceRowClusters, cmprClsHost.nSliceRowClusters, NSLICES * GPUCA_ROW_COUNT * sizeof(cmprClsHost.nSliceRowClusters[0]), unattachedStream, toGPU);
@@ -365,44 +365,29 @@ int GPUChainTracking::RunTPCDecompression()
 
     runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step1unattached>(GetGridAuto(unattachedStream), krnlRunRangeNone, {nullptr, &mEvents->init});
 
-    auto startAtt = std::chrono::high_resolution_clock::now();
     for (unsigned int iSlice = 0; iSlice < NSLICES; iSlice++) {
       for (unsigned int iRow = 0; iRow < GPUCA_ROW_COUNT; iRow++) {
         int linearIndex = iSlice * GPUCA_ROW_COUNT + iRow;
         GPUMemCpy(RecoStep::TPCDecompression, mInputsHost->mPclusterNativeOutput + mClusterNativeAccess->clusterOffset[iSlice][iRow], DecompressorShadow.mTmpNativeClusters + GPUTPCDecompressionKernels::computeLinearTmpBufferIndex(iSlice, iRow, Decompressor.mMaxNativeClustersPerBuffer), sizeof(DecompressorShadow.mTmpNativeClusters[0]) * Decompressor.mNativeClustersIndex[linearIndex], inputStream, false, nullptr,mEvents->stream,nStreams);
       }
     }
-    SynchronizeStream(inputStream);
-    auto endAtt = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> durationAtt = endAtt - startAtt;
-    LOGP(info,"Exec att time: {} ms", durationAtt.count() * 1e3);
-
-    auto startUnatt = std::chrono::high_resolution_clock::now();
     for (unsigned int iSlice = 0; iSlice < NSLICES; iSlice++) {
       for (unsigned int iRow = 0; iRow < GPUCA_ROW_COUNT; iRow++) {
         int linearIndex = iSlice * GPUCA_ROW_COUNT + iRow;
         GPUMemCpy(RecoStep::TPCDecompression, mInputsHost->mPclusterNativeOutput + mClusterNativeAccess->clusterOffset[iSlice][iRow] + Decompressor.mNativeClustersIndex[linearIndex], DecompressorShadow.mNativeClustersBuffer + mClusterNativeAccess->clusterOffset[iSlice][iRow] + Decompressor.mNativeClustersIndex[linearIndex], sizeof(DecompressorShadow.mNativeClustersBuffer[0]) * ((linearIndex >= cmprClsHost.nSliceRows) ? 0 : cmprClsHost.nSliceRowClusters[linearIndex]), unattachedStream, false);
       }
     }
-    SynchronizeStream(unattachedStream);
-    auto endUnatt = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> durationUnatt = endUnatt - startUnatt;
-    LOGP(info,"Exec unatt time: {} ms", durationUnatt.count() * 1e3);
-
     SynchronizeStream(inputStream);
     SynchronizeStream(unattachedStream);
 
     if (GetProcessingSettings().deterministicGPUReconstruction || GetProcessingSettings().debugLevel >= 4) {
       runKernel<GPUTPCDecompressionUtilKernels, GPUTPCDecompressionUtilKernels::sortPerSectorRow>(GetGridAutoStep(unattachedStream, RecoStep::TPCDecompression), krnlRunRangeNone, krnlEventNone);
       const ClusterNativeAccess* decoded = mIOPtrs.clustersNative;
-      std::vector<o2::tpc::ClusterNative> tmpClustersDec;
       for (unsigned int i = 0; i < NSLICES; i++) {
         for (unsigned int j = 0; j < GPUCA_ROW_COUNT; j++) {
-          tmpClustersDec.resize(decoded->nClusters[i][j]);
-          for (unsigned int k = 0; k < decoded->nClusters[i][j]; k++) {
-            tmpClustersDec[k] = decoded->clusters[i][j][k];
-          }
-          std::sort(tmpClustersDec.begin(), tmpClustersDec.end());
+          ClusterNative* begin = mInputsHost->mPclusterNativeOutput + decoded->clusterOffset[i][j];
+          ClusterNative* end = begin + decoded->nClusters[i][j];
+          std::sort(begin, end);
         }
       }
     }
