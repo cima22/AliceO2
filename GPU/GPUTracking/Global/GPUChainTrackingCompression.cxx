@@ -208,7 +208,7 @@ int GPUChainTracking::RunTPCCompression()
 int GPUChainTracking::RunTPCDecompression()
 {
   auto start = std::chrono::high_resolution_clock::now();
-//#ifdef GPUCA_HAVE_O2HEADERS
+  //#ifdef GPUCA_HAVE_O2HEADERS
   if (GetProcessingSettings().tpcUseOldCPUDecoding) {
     const auto& threadContext = GetThreadContext();
     TPCClusterDecompressor decomp;
@@ -248,7 +248,7 @@ int GPUChainTracking::RunTPCDecompression()
     CompressedClusters& inputGPUShadow = DecompressorShadow.mInputGPU;
 
     int inputStream = 0;
-    int unattachedStream = 4;
+    int unattachedStream = mRec->NStreams() - 1;
     inputGPU.nAttachedClusters = cmprClsHost.nAttachedClusters;
     inputGPU.nUnattachedClusters = cmprClsHost.nUnattachedClusters;
     inputGPU.nTracks = cmprClsHost.nTracks;
@@ -288,7 +288,7 @@ int GPUChainTracking::RunTPCDecompression()
     bool toGPU = true;
     runKernel<GPUMemClean16>(GetGridAutoStep(inputStream, RecoStep::TPCDecompression), krnlRunRangeNone, &mEvents->init, DecompressorShadow.mNativeClustersIndex, NSLICES * GPUCA_ROW_COUNT * sizeof(DecompressorShadow.mNativeClustersIndex[0]));
     std::exclusive_scan(cmprClsHost.nTrackClusters, cmprClsHost.nTrackClusters + cmprClsHost.nTracks, Decompressor.mAttachedClustersOffsets,0u);
-    int nStreams = 4;
+    int nStreams = mRec->NStreams() - 1;
     for (unsigned int iStream = 0; iStream < nStreams; ++iStream) {
       unsigned int startTrack = cmprClsHost.nTracks / nStreams * iStream;
       unsigned int endTrack = cmprClsHost.nTracks / nStreams * (iStream + 1) + (iStream < nStreams - 1 ? 0 : cmprClsHost.nTracks % nStreams);
@@ -313,7 +313,7 @@ int GPUChainTracking::RunTPCDecompression()
       GPUMemCpy(myStep, inputGPUShadow.timeA + startTrack, cmprClsHost.timeA + startTrack, numTracks * sizeof(cmprClsHost.timeA[0]), iStream, toGPU);
       GPUMemCpy(myStep, inputGPUShadow.padA + startTrack, cmprClsHost.padA + startTrack, numTracks * sizeof(cmprClsHost.padA[0]), iStream, toGPU);
 
-      runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step0attached>({120,64,iStream}, krnlRunRangeNone, {&mEvents->stream[iStream], &mEvents->init}, startTrack, endTrack);
+      runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step0attached>({60,96,iStream}, krnlRunRangeNone, {&mEvents->stream[iStream], &mEvents->init}, startTrack, endTrack);
     }
 
     GPUMemCpy(myStep, inputGPUShadow.nSliceRowClusters, cmprClsHost.nSliceRowClusters, NSLICES * GPUCA_ROW_COUNT * sizeof(cmprClsHost.nSliceRowClusters[0]), unattachedStream, toGPU);
@@ -362,13 +362,16 @@ int GPUChainTracking::RunTPCDecompression()
     mIOPtrs.clustersNative = mClusterNativeAccess.get();
     mClusterNativeAccess->clustersLinear = mInputsHost->mPclusterNativeOutput;
     mClusterNativeAccess->setOffsetPtrs();
-
+    auto startU = std::chrono::high_resolution_clock::now();
     for (unsigned int iSlice = 0; iSlice < NSLICES; ++iSlice) {
       int iStream = iSlice % mRec->NStreams();
-      runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step1unattached>({120,64,iStream}, krnlRunRangeNone, {nullptr, &mEvents->init}, iSlice);
+      runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step1unattached>({120,32,iStream}, krnlRunRangeNone, {nullptr, &mEvents->init}, iSlice);
       GPUMemCpy(RecoStep::TPCDecompression, mInputsHost->mPclusterNativeOutput + mClusterNativeAccess->clusterOffset[iSlice][0], DecompressorShadow.mNativeClustersBuffer + mClusterNativeAccess->clusterOffset[iSlice][0], sizeof(Decompressor.mNativeClustersBuffer[0]) * mClusterNativeAccess->nClustersSector[iSlice], iStream, false);
     }
     SynchronizeGPU();
+  auto endU = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> durationU = endU - startU;
+  LOGP(info,"Unatt time: {} ms", durationU.count() * 1e3);
 
     if (GetProcessingSettings().deterministicGPUReconstruction || GetProcessingSettings().debugLevel >= 4) {
       runKernel<GPUTPCDecompressionUtilKernels, GPUTPCDecompressionUtilKernels::sortPerSectorRow>(GetGridAutoStep(unattachedStream, RecoStep::TPCDecompression), krnlRunRangeNone, krnlEventNone);
