@@ -288,7 +288,7 @@ int GPUChainTracking::RunTPCDecompression()
     bool toGPU = true;
     runKernel<GPUMemClean16>(GetGridAutoStep(inputStream, RecoStep::TPCDecompression), krnlRunRangeNone, &mEvents->init, DecompressorShadow.mNativeClustersIndex, NSLICES * GPUCA_ROW_COUNT * sizeof(DecompressorShadow.mNativeClustersIndex[0]));
     std::exclusive_scan(cmprClsHost.nTrackClusters, cmprClsHost.nTrackClusters + cmprClsHost.nTracks, Decompressor.mAttachedClustersOffsets,0u);
-    int nStreams = 5;
+    int nStreams = 4;
     for (unsigned int iStream = 0; iStream < nStreams; ++iStream) {
       unsigned int startTrack = cmprClsHost.nTracks / nStreams * iStream;
       unsigned int endTrack = cmprClsHost.nTracks / nStreams * (iStream + 1) + (iStream < nStreams - 1 ? 0 : cmprClsHost.nTracks % nStreams);
@@ -313,7 +313,7 @@ int GPUChainTracking::RunTPCDecompression()
       GPUMemCpy(myStep, inputGPUShadow.timeA + startTrack, cmprClsHost.timeA + startTrack, numTracks * sizeof(cmprClsHost.timeA[0]), iStream, toGPU);
       GPUMemCpy(myStep, inputGPUShadow.padA + startTrack, cmprClsHost.padA + startTrack, numTracks * sizeof(cmprClsHost.padA[0]), iStream, toGPU);
 
-      runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step0attached>({60,128,iStream}, krnlRunRangeNone, {&mEvents->stream[iStream], &mEvents->init}, startTrack, endTrack);
+      runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step0attached>({120,64,iStream}, krnlRunRangeNone, {&mEvents->stream[iStream], &mEvents->init}, startTrack, endTrack);
     }
 
     GPUMemCpy(myStep, inputGPUShadow.nSliceRowClusters, cmprClsHost.nSliceRowClusters, NSLICES * GPUCA_ROW_COUNT * sizeof(cmprClsHost.nSliceRowClusters[0]), unattachedStream, toGPU);
@@ -365,7 +365,7 @@ int GPUChainTracking::RunTPCDecompression()
 
     for (unsigned int iSlice = 0; iSlice < NSLICES; ++iSlice) {
       int iStream = iSlice % mRec->NStreams();
-      runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step1unattached>(GetGridAuto(iStream), krnlRunRangeNone, {nullptr, &mEvents->init}, iSlice);
+      runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step1unattached>({120,64,iStream}, krnlRunRangeNone, {nullptr, &mEvents->init}, iSlice);
       GPUMemCpy(RecoStep::TPCDecompression, mInputsHost->mPclusterNativeOutput + mClusterNativeAccess->clusterOffset[iSlice][0], DecompressorShadow.mNativeClustersBuffer + mClusterNativeAccess->clusterOffset[iSlice][0], sizeof(Decompressor.mNativeClustersBuffer[0]) * mClusterNativeAccess->nClustersSector[iSlice], iStream, false);
     }
     SynchronizeGPU();
