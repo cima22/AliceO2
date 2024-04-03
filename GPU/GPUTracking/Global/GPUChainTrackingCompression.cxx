@@ -363,10 +363,14 @@ int GPUChainTracking::RunTPCDecompression()
     mClusterNativeAccess->clustersLinear = mInputsHost->mPclusterNativeOutput;
     mClusterNativeAccess->setOffsetPtrs();
 
-    for (unsigned int iSlice = 0; iSlice < NSLICES; ++iSlice) {
-      int iStream = iSlice % mRec->NStreams();
-      runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step1unattached>(GetGridAuto(iStream), krnlRunRangeNone, {nullptr, &mEvents->init}, iSlice);
-      GPUMemCpy(RecoStep::TPCDecompression, mInputsHost->mPclusterNativeOutput + mClusterNativeAccess->clusterOffset[iSlice][0], DecompressorShadow.mNativeClustersBuffer + mClusterNativeAccess->clusterOffset[iSlice][0], sizeof(Decompressor.mNativeClustersBuffer[0]) * mClusterNativeAccess->nClustersSector[iSlice], iStream, false);
+    unsigned int batchSize = 3;
+    for (unsigned int iSlice = 0; iSlice < NSLICES; iSlice = iSlice + batchSize) {
+      int iStream = (iSlice / batchSize) % mRec->NStreams();
+      runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step1unattached>(GetGridAuto(iStream), krnlRunRangeNone, {nullptr, &mEvents->init}, iSlice, batchSize);
+      unsigned int copySize = 0;
+      for(unsigned int i = 0; i < batchSize; i++)
+        copySize += mClusterNativeAccess->nClustersSector[iSlice + i];
+      GPUMemCpy(RecoStep::TPCDecompression, mInputsHost->mPclusterNativeOutput + mClusterNativeAccess->clusterOffset[iSlice][0], DecompressorShadow.mNativeClustersBuffer + mClusterNativeAccess->clusterOffset[iSlice][0], sizeof(Decompressor.mNativeClustersBuffer[0]) * copySize, iStream, false);
     }
     SynchronizeGPU();
 
