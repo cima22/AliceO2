@@ -288,7 +288,7 @@ int GPUChainTracking::RunTPCDecompression()
     bool toGPU = true;
     runKernel<GPUMemClean16>(GetGridAutoStep(inputStream, RecoStep::TPCDecompression), krnlRunRangeNone, &mEvents->init, DecompressorShadow.mNativeClustersIndex, NSLICES * GPUCA_ROW_COUNT * sizeof(DecompressorShadow.mNativeClustersIndex[0]));
     std::exclusive_scan(cmprClsHost.nTrackClusters, cmprClsHost.nTrackClusters + cmprClsHost.nTracks, Decompressor.mAttachedClustersOffsets,0u);
-    int nStreams = mRec->NStreams() - 1;
+    int nStreams = doGPU ? mRec->NStreams() - 1 : 4;
     for (unsigned int iStream = 0; iStream < nStreams; ++iStream) {
       unsigned int startTrack = cmprClsHost.nTracks / nStreams * iStream;
       unsigned int endTrack = cmprClsHost.nTracks / nStreams * (iStream + 1) + (iStream < nStreams - 1 ? 0 : cmprClsHost.nTracks % nStreams);
