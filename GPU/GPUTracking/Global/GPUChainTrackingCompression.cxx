@@ -348,16 +348,12 @@ int GPUChainTracking::RunTPCDecompression()
     mIOPtrs.clustersNative = mClusterNativeAccess.get();
     mClusterNativeAccess->clustersLinear = mInputsHost->mPclusterNativeOutput;
     mClusterNativeAccess->setOffsetPtrs();
-auto startU = std::chrono::high_resolution_clock::now();
     runKernel<GPUTPCDecompressionKernels, GPUTPCDecompressionKernels::step1unattached>(GetGridAuto(unattachedStream), krnlRunRangeNone, {nullptr, &mEvents->init});
     if (GetProcessingSettings().deterministicGPUReconstruction || GetProcessingSettings().debugLevel >= 4) {
       runKernel<GPUTPCDecompressionUtilKernels, GPUTPCDecompressionUtilKernels::sortPerSectorRow>(GetGridAutoStep(unattachedStream, RecoStep::TPCDecompression), krnlRunRangeNone, krnlEventNone);
     }
     GPUMemCpy(RecoStep::TPCDecompression, (void*)mInputsHost->mPclusterNativeOutput, (void*)mInputsShadow->mPclusterNativeBuffer, sizeof(mInputsShadow->mPclusterNativeBuffer[0]) * mIOPtrs.clustersNative->nClustersTotal, unattachedStream, false);
     SynchronizeStream(unattachedStream);
-  auto endU = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double> durationU = endU - startU;
-  LOGP(info,"Unatt time: {} ms", durationU.count() * 1e3);
     mRec->PopNonPersistentMemory(RecoStep::TPCDecompression, qStr2Tag("TPCDCMPR"));
   }
 #endif
