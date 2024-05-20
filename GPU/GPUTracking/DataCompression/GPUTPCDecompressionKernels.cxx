@@ -28,15 +28,10 @@ GPUdii() void GPUTPCDecompressionKernels::Thread<GPUTPCDecompressionKernels::ste
   CompressedClusters& GPUrestrict() cmprClusters = decompressor.mInputGPU;
   const GPUParam& GPUrestrict() param = processors.param;
 
-  unsigned int offset = 0, lasti = 0;
   const unsigned int maxTime = (param.par.continuousMaxTimeBin + 1) * ClusterNative::scaleTimePacked - 1;
 
   for (unsigned int i = get_global_id(0); i < cmprClusters.nTracks; i += get_global_size(0)) {
-    while (lasti < i) {
-      offset += cmprClusters.nTrackClusters[lasti++];
-    }
-    lasti++;
-    decompressTrack(cmprClusters, param, maxTime, i, offset, decompressor);
+    decompressTrack(cmprClusters, param, maxTime, i, decompressor.mAttachedClustersOffsets[i], decompressor);
   }
 }
 
