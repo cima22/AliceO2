@@ -45,9 +45,14 @@ class GPUTPCDecompressionKernels : public GPUKernelTemplate
 
   template <int32_t iKernel = defaultKernel, typename... Args>
   GPUd() static void Thread(int32_t nBlocks, int32_t nThreads, int32_t iBlock, int32_t iThread, GPUsharedref() GPUSharedMemory& smem, processorType& GPUrestrict() processors, Args... args);
-  GPUd() static void decompressTrack(o2::tpc::CompressedClusters& cmprClusters, const GPUParam& param, const uint32_t maxTime, const uint32_t trackIndex, uint32_t clusterOffset, GPUTPCDecompression& decompressor);
+  
+  template <typename... Args>
+  GPUd() static void decompressTrack(o2::tpc::CompressedClusters& cmprClusters, const GPUParam& param, const uint32_t maxTime, const uint32_t trackIndex, uint32_t& clusterOffset, Args&... args);
   GPUdi() static o2::tpc::ClusterNative decompressTrackStore(const o2::tpc::CompressedClusters& cmprClusters, const uint32_t clusterOffset, uint32_t slice, uint32_t row, uint32_t pad, uint32_t time, GPUTPCDecompression& decompressor);
-  GPUdi() static void decompressHits(const o2::tpc::CompressedClusters& cmprClusters, const uint32_t start, const uint32_t end, o2::tpc::ClusterNative* clusterNativeBuffer);
+  
+  template <typename... Args>
+  GPUdi() static void decompressHits(const o2::tpc::CompressedClusters& cmprClusters, const uint32_t start, const uint32_t end, Args&... args);
+  GPUdi() static void decompressHitsStore(const o2::tpc::CompressedClusters& cmprClusters, uint32_t k, uint32_t time, uint16_t pad, o2::tpc::ClusterNative*& clusterNativeBuffer);
 
   GPUd() static uint32_t computeLinearTmpBufferIndex(uint32_t slice, uint32_t row, uint32_t maxClustersPerBuffer)
   {

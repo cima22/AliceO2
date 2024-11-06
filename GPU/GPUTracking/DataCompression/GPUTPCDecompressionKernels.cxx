@@ -31,11 +31,13 @@ GPUdii() void GPUTPCDecompressionKernels::Thread<GPUTPCDecompressionKernels::ste
   const uint32_t maxTime = (param.continuousMaxTimeBin + 1) * ClusterNative::scaleTimePacked - 1;
 
   for (int32_t i = trackStart + get_global_id(0); i < trackEnd; i += get_global_size(0)) {
-    decompressTrack(cmprClusters, param, maxTime, i, decompressor.mAttachedClustersOffsets[i], decompressor);
+    uint32_t offset = decompressor.mAttachedClustersOffsets[i];
+    decompressTrack(cmprClusters, param, maxTime, i, offset, decompressor);
   }
 }
 
-GPUdii() void GPUTPCDecompressionKernels::decompressTrack(CompressedClusters& cmprClusters, const GPUParam& param, const uint32_t maxTime, const uint32_t trackIndex, uint32_t clusterOffset, GPUTPCDecompression& decompressor)
+template <typename... Args>
+GPUdii() void GPUTPCDecompressionKernels::decompressTrack(CompressedClusters& cmprClusters, const GPUParam& param, const uint32_t maxTime, const uint32_t trackIndex, uint32_t& clusterOffset, Args&... args)
 {
   float zOffset = 0;
   uint32_t slice = cmprClusters.sliceA[trackIndex];
@@ -96,7 +98,7 @@ GPUdii() void GPUTPCDecompressionKernels::decompressTrack(CompressedClusters& cm
       time = cmprClusters.timeA[trackIndex];
       pad = cmprClusters.padA[trackIndex];
     }
-    const auto cluster = decompressTrackStore(cmprClusters, clusterOffset, slice, row, pad, time, decompressor);
+    const auto cluster = decompressTrackStore(cmprClusters, clusterOffset, slice, row, pad, time, args...);
     float y = param.tpcGeometry.LinearPad2Y(slice, row, cluster.getPad());
     float z = param.tpcGeometry.LinearTime2Z(slice, cluster.getTime());
     if (clusterIndex == 0) {
@@ -111,7 +113,7 @@ GPUdii() void GPUTPCDecompressionKernels::decompressTrack(CompressedClusters& cm
   clusterOffset += cmprClusters.nTrackClusters[trackIndex] - clusterIndex;
 }
 
-GPUdii() ClusterNative GPUTPCDecompressionKernels::decompressTrackStore(const o2::tpc::CompressedClusters& cmprClusters, const uint32_t clusterOffset, uint32_t slice, uint32_t row, uint32_t pad, uint32_t time, GPUTPCDecompression& decompressor)
+GPUdii() ClusterNative GPUTPCDecompressionKernels::decompressTrackStore(const CompressedClusters& cmprClusters, const uint32_t clusterOffset, uint32_t slice, uint32_t row, uint32_t pad, uint32_t time, GPUTPCDecompression& decompressor)
 {
   uint32_t tmpBufferIndex = computeLinearTmpBufferIndex(slice, row, decompressor.mMaxNativeClustersPerBuffer);
   uint32_t currentClusterIndex = CAMath::AtomicAdd(decompressor.mNativeClustersIndex + (slice * GPUCA_ROW_COUNT + row), 1u);
@@ -161,7 +163,8 @@ GPUdii() void GPUTPCDecompressionKernels::Thread<GPUTPCDecompressionKernels::ste
   }
 }
 
-GPUdii() void GPUTPCDecompressionKernels::decompressHits(const o2::tpc::CompressedClusters& cmprClusters, const uint32_t start, const uint32_t end, ClusterNative* clusterNativeBuffer)
+template <typename... Args>
+GPUdii() void GPUTPCDecompressionKernels::decompressHits(const CompressedClusters& cmprClusters, const uint32_t start, const uint32_t end, Args&... args)
 {
   uint32_t time = 0;
   uint16_t pad = 0;
@@ -177,8 +180,12 @@ GPUdii() void GPUTPCDecompressionKernels::decompressHits(const o2::tpc::Compress
       time = cmprClusters.timeDiffU[k];
       pad = cmprClusters.padDiffU[k];
     }
-    *(clusterNativeBuffer++) = ClusterNative(time, cmprClusters.flagsU[k], pad, cmprClusters.sigmaTimeU[k], cmprClusters.sigmaPadU[k], cmprClusters.qMaxU[k], cmprClusters.qTotU[k]);
+    decompressHitsStore(cmprClusters, k, time, pad, args...);
   }
+}
+
+GPUdii() void GPUTPCDecompressionKernels::decompressHitsStore(const CompressedClusters& cmprClusters, uint32_t k, uint32_t time, uint16_t pad, ClusterNative*& clusterNativeBuffer){
+    *(clusterNativeBuffer++) = ClusterNative(time, cmprClusters.flagsU[k], pad, cmprClusters.sigmaTimeU[k], cmprClusters.sigmaPadU[k], cmprClusters.qMaxU[k], cmprClusters.qTotU[k]);
 }
 
 template <typename T>
