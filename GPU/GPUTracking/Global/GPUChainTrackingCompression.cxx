@@ -205,6 +205,12 @@ int32_t GPUChainTracking::RunTPCCompression()
 
 int32_t GPUChainTracking::RunTPCDecompression()
 {
+  ClusterNativeAccess* original = new ClusterNativeAccess;
+  original->clustersLinear = new ClusterNative[mIOPtrs.clustersNative->nClustersTotal];
+  memcpy((void*)original->clustersLinear, mIOPtrs.clustersNative->clustersLinear, mIOPtrs.clustersNative->nClustersTotal * sizeof(mIOPtrs.clustersNative->clustersLinear[0]));
+  memcpy((void*)original->nClusters, mIOPtrs.clustersNative->nClusters, NSLICES * GPUCA_ROW_COUNT * sizeof(mIOPtrs.clustersNative->nClusters[0][0]));
+  original->setOffsetPtrs();
+
 #ifdef GPUCA_HAVE_O2HEADERS
   if (GetProcessingSettings().tpcUseOldCPUDecoding) {
     const auto& threadContext = GetThreadContext();
@@ -374,7 +380,7 @@ int32_t GPUChainTracking::RunTPCDecompression()
     }
     SynchronizeGPU();
 
-    if (GetProcessingSettings().deterministicGPUReconstruction || GetProcessingSettings().debugLevel >= 4) {
+    if (1 || GetProcessingSettings().deterministicGPUReconstruction || GetProcessingSettings().debugLevel >= 4) {
       runKernel<GPUTPCDecompressionUtilKernels, GPUTPCDecompressionUtilKernels::sortPerSectorRow>(GetGridAutoStep(unattachedStream, RecoStep::TPCDecompression));
       const ClusterNativeAccess* decoded = mIOPtrs.clustersNative;
       if (doGPU) {
@@ -387,6 +393,49 @@ int32_t GPUChainTracking::RunTPCDecompression()
         }
       }
     }
+
+    const ClusterNativeAccess* decoded = mIOPtrs.clustersNative;
+    unsigned int decodingErrors = 0;
+    std::vector<o2::tpc::ClusterNative> tmpClusters;
+    if (param().rec.tpc.rejectionStrategy == GPUSettings::RejectionNone) {
+      for (unsigned int i = 0; i < NSLICES; i++) {
+        for (unsigned int j = 0; j < GPUCA_ROW_COUNT; j++) {
+          if (original->nClusters[i][j] != decoded->nClusters[i][j]) {
+            GPUError("Number of clusters mismatch slice %u row %u: expected %d v.s. decoded %d", i, j, original->nClusters[i][j], decoded->nClusters[i][j]);
+            decodingErrors++;
+            continue;
+          }
+          tmpClusters.resize(original->nClusters[i][j]);
+            for (unsigned int k = 0; k < original->nClusters[i][j]; k++) {
+              tmpClusters[k] = original->clusters[i][j][k];
+              if (param().rec.tpc.compressionTypeMask & GPUSettings::CompressionTruncate) {
+                GPUTPCCompression::truncateSignificantBitsChargeMax(tmpClusters[k].qMax, param());
+                GPUTPCCompression::truncateSignificantBitsCharge(tmpClusters[k].qTot, param());
+                GPUTPCCompression::truncateSignificantBitsWidth(tmpClusters[k].sigmaPadPacked, param());
+                GPUTPCCompression::truncateSignificantBitsWidth(tmpClusters[k].sigmaTimePacked, param());
+              }
+            }
+          std::sort(tmpClusters.begin(), tmpClusters.end());
+    for (unsigned int k = 0; k < original->nClusters[i][j]; k++) {
+     const o2::tpc::ClusterNative& c1 = tmpClusters[k];
+     const o2::tpc::ClusterNative& c2 = decoded->clusters[i][j][k];
+     if (!(c1 == c2)) {
+      if (decodingErrors++ < 100) {
+        GPUWarning("Cluster mismatch: slice %2u row %3u hit %5u: %6d %3d %4d %3d %3d %4d %4d", i, j, k, (int)c1.getTimePacked(), (int)c1.getFlags(), (int)c1.padPacked, (int)c1.sigmaTimePacked, (int)c1.sigmaPadPacked, (int)c1.qMax, (int)c1.qTot);
+        GPUWarning("%45s %6d %3d %4d %3d %3d %4d %4d", "", (int)c2.getTimePacked(), (int)c2.getFlags(), (int)c2.padPacked, (int)c2.sigmaTimePacked, (int)c2.sigmaPadPacked, (int)c2.qMax, (int)c2.qTot);
+       }
+     }
+    }
+   }
+  }
+if (decodingErrors) {
+  GPUWarning("Errors during cluster decoding %u\n", decodingErrors);
+ } else {
+  GPUInfo("Cluster decoding verification on GPU: PASSED");
+ }
+}
+  delete[] original->clustersLinear;
+  delete original;
     mRec->PopNonPersistentMemory(RecoStep::TPCDecompression, qStr2Tag("TPCDCMPR"));
   }
 #endif

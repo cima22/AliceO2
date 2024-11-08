@@ -43,7 +43,7 @@ class GPUTPCDecompression : public GPUProcessor
   friend class GPUTPCDecompressionKernels;
   friend class GPUTPCDecompressionUtilKernels;
   friend class GPUChainTracking;
-
+  friend class TPCClusterDecompressionCore;
  public:
 #ifndef GPUCA_GPUCODE
   void InitializeProcessor();

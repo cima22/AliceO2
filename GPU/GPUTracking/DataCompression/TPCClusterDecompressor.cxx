@@ -20,7 +20,7 @@
 #include <algorithm>
 #include <cstring>
 #include <atomic>
-#include "TPCClusterDecompressor.inc"
+#include "TPCClusterDecompressionCore.inc"
 
 using namespace GPUCA_NAMESPACE::gpu;
 using namespace o2::tpc;
@@ -62,7 +62,7 @@ int32_t TPCClusterDecompressor::decompress(const CompressedClusters* clustersCom
       offset += clustersCompressed->nTrackClusters[lasti++];
     }
     lasti++;
-    decompressTrack(clustersCompressed, param, maxTime, i, offset, clusters, locks);
+    TPCClusterDecompressionCore::decompressTrack(*clustersCompressed, param, maxTime, i, offset, clusters, locks);
   }
   size_t nTotalClusters = clustersCompressed->nAttachedClusters + clustersCompressed->nUnattachedClusters;
   ClusterNative* clusterBuffer = allocator(nTotalClusters);
@@ -91,7 +91,7 @@ int32_t TPCClusterDecompressor::decompress(const CompressedClusters* clustersCom
       }
       ClusterNative* clout = buffer + clusters[i][j].size();
       uint32_t end = offsets[i][j] + ((i * GPUCA_ROW_COUNT + j >= clustersCompressed->nSliceRows) ? 0 : clustersCompressed->nSliceRowClusters[i * GPUCA_ROW_COUNT + j]);
-      decompressHits(clustersCompressed, offsets[i][j], end, clout);
+      TPCClusterDecompressionCore::decompressHits(*clustersCompressed, offsets[i][j], end, clout);
       if (param.rec.tpc.clustersShiftTimebins != 0.f) {
         for (uint32_t k = 0; k < clustersNative.nClusters[i][j]; k++) {
           auto& cl = buffer[k];

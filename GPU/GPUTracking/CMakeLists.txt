@@ -122,6 +122,7 @@ set(HDRS_INSTALL
     DataCompression/GPUTPCClusterRejection.h
     DataCompression/GPUTPCCompressionKernels.inc
     DataCompression/TPCClusterDecompressor.inc
+    DataCompression/TPCClusterDecompressionCore.inc
     DataTypes/GPUdEdxInfo.h
     DataTypes/GPUHostDataTypes.h
     DataTypes/GPUO2DataTypes.h
