@@ -55,7 +55,7 @@ GPUhi() static auto decompressTrackStore(const CompressedClusters& clustersCompr
 }
 #endif
 
-GPUdii() static ClusterNative decompressTrackStore(const CompressedClusters& cmprClusters, const uint32_t clusterOffset, uint32_t slice, uint32_t row, uint32_t pad, uint32_t time, GPUTPCDecompression& decompressor)
+GPUdi() static ClusterNative decompressTrackStore(const CompressedClusters& cmprClusters, const uint32_t clusterOffset, uint32_t slice, uint32_t row, uint32_t pad, uint32_t time, GPUTPCDecompression& decompressor)
 {
   uint32_t tmpBufferIndex = slice * (GPUCA_ROW_COUNT * decompressor.mMaxNativeClustersPerBuffer) + row * decompressor.mMaxNativeClustersPerBuffer;
   uint32_t currentClusterIndex = CAMath::AtomicAdd(decompressor.mNativeClustersIndex + (slice * GPUCA_ROW_COUNT + row), 1u);
@@ -159,7 +159,7 @@ GPUhdi() static auto decompressHitsStore(const CompressedClusters& cmprClusters,
 }
 
 template <typename... Args>
-GPUdii() static void decompressHits(const CompressedClusters& cmprClusters, const uint32_t start, const uint32_t end, Args&... args)
+GPUdi() static void decompressHits(const CompressedClusters& cmprClusters, const uint32_t start, const uint32_t end, Args&... args)
 {
   uint32_t time = 0;
   uint16_t pad = 0;
