@@ -35,11 +35,6 @@ class TPCClusterDecompressor
   static constexpr uint32_t NSLICES = GPUCA_NSLICES;
   static int32_t decompress(const o2::tpc::CompressedClustersFlat* clustersCompressed, o2::tpc::ClusterNativeAccess& clustersNative, std::function<o2::tpc::ClusterNative*(size_t)> allocator, const GPUParam& param, bool deterministicRec);
   static int32_t decompress(const o2::tpc::CompressedClusters* clustersCompressed, o2::tpc::ClusterNativeAccess& clustersNative, std::function<o2::tpc::ClusterNative*(size_t)> allocator, const GPUParam& param, bool deterministicRec);
-
-  template <typename... Args>
-  static void decompressTrack(const o2::tpc::CompressedClusters* clustersCompressed, const GPUParam& param, const uint32_t maxTime, const uint32_t i, uint32_t& offset, Args&... args);
-  template <typename... Args>
-  static void decompressHits(const o2::tpc::CompressedClusters* clustersCompressed, const uint32_t start, const uint32_t end, Args&... args);
 };
 } // namespace GPUCA_NAMESPACE::gpu
 
