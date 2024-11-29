@@ -246,13 +246,20 @@ int32_t GPUChainTracking::RunTPCDecompression()
     mRec->PushNonPersistentMemory(qStr2Tag("TPCDCMPR"));
     RecoStep myStep = RecoStep::TPCDecompression;
     bool doGPU = GetRecoStepsGPU() & RecoStep::TPCDecompression;
-    bool runFiltering = GetProcessingSettings().tpcApplyCFCutsAtDecoding;
+    bool runFiltering = param().tpcCutTimeBin > 0;
     GPUTPCDecompression& Decompressor = processors()->tpcDecompressor;
     GPUTPCDecompression& DecompressorShadow = doGPU ? processorsShadow()->tpcDecompressor : Decompressor;
     const auto& threadContext = GetThreadContext();
     CompressedClusters cmprClsHost = *mIOPtrs.tpcCompressedClusters;
     CompressedClusters& inputGPU = Decompressor.mInputGPU;
     CompressedClusters& inputGPUShadow = DecompressorShadow.mInputGPU;
+
+    if (cmprClsHost.nTracks && cmprClsHost.solenoidBz != -1e6f && cmprClsHost.solenoidBz != param().bzkG) {
+      throw std::runtime_error("Configured solenoid Bz does not match value used for track model encoding");
+    }
+    if (cmprClsHost.nTracks && cmprClsHost.maxTimeBin != -1e6 && cmprClsHost.maxTimeBin != param().continuousMaxTimeBin) {
+      throw std::runtime_error("Configured max time bin does not match value used for track model encoding");
+    }
 
     int32_t inputStream = 0;
     int32_t unattachedStream = mRec->NStreams() - 1;
