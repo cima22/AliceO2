@@ -311,7 +311,7 @@ GPUdii() gpuSpan<const Cluster> getClustersOnLayer(const int rof,
 }
 
 template <int nLayers>
-GPUg() void fitTrackSeedsKernel(
+GPUg() void __launch_bounds__(256, 1) fitTrackSeedsKernel(
   CellSeed<nLayers>* trackSeeds,
   const TrackingFrameInfo** foundTrackingFrameInfo,
   o2::its::TrackITSExt* tracks,
@@ -374,7 +374,7 @@ GPUg() void fitTrackSeedsKernel(
 }
 
 template <bool initRun, int nLayers = 7>
-GPUg() void computeLayerCellNeighboursKernel(
+GPUg() void __launch_bounds__(256, 1) computeLayerCellNeighboursKernel(
   CellSeed<nLayers>** cellSeedArray,
   int* neighboursLUT,
   int* neighboursIndexTable,
@@ -438,7 +438,7 @@ GPUg() void computeLayerCellNeighboursKernel(
 }
 
 template <bool initRun, int nLayers>
-GPUg() void computeLayerCellsKernel(
+GPUg() void __launch_bounds__(256, 1) computeLayerCellsKernel(
   const Cluster** sortedClusters,
   const Cluster** unsortedClusters,
   const TrackingFrameInfo** tfInfo,
@@ -525,7 +525,7 @@ GPUg() void computeLayerCellsKernel(
 }
 
 template <bool initRun, int nLayers>
-GPUg() void computeLayerTrackletsMultiROFKernel(
+GPUg() void __launch_bounds__(256, 1) computeLayerTrackletsMultiROFKernel(
   const IndexTableUtils<nLayers>* utils,
   const uint8_t* multMask,
   const int layerIndex,
@@ -652,7 +652,8 @@ GPUg() void computeLayerTrackletsMultiROFKernel(
   }
 }
 
-GPUg() void compileTrackletsLookupTableKernel(const Tracklet* tracklets,
+GPUg() void __launch_bounds__(256, 1) compileTrackletsLookupTableKernel(
+                                              const Tracklet* tracklets,
                                               int* trackletsLookUpTable,
                                               const int nTracklets)
 {
@@ -662,7 +663,8 @@ GPUg() void compileTrackletsLookupTableKernel(const Tracklet* tracklets,
 }
 
 template <bool dryRun, int nLayers = 7>
-GPUg() void processNeighboursKernel(const int layer,
+GPUg() void __launch_bounds__(256, 1) processNeighboursKernel(
+                                    const int layer,
                                     const int level,
                                     CellSeed<nLayers>** allCellSeeds,
                                     CellSeed<nLayers>* currentCellSeeds,
