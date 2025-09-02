@@ -653,9 +653,9 @@ GPUg() void __launch_bounds__(256, 1) computeLayerTrackletsMultiROFKernel(
 }
 
 GPUg() void __launch_bounds__(256, 1) compileTrackletsLookupTableKernel(
-                                              const Tracklet* tracklets,
-                                              int* trackletsLookUpTable,
-                                              const int nTracklets)
+  const Tracklet* tracklets,
+  int* trackletsLookUpTable,
+  const int nTracklets)
 {
   for (int currentTrackletIndex = blockIdx.x * blockDim.x + threadIdx.x; currentTrackletIndex < nTracklets; currentTrackletIndex += blockDim.x * gridDim.x) {
     atomicAdd(&trackletsLookUpTable[tracklets[currentTrackletIndex].firstClusterIndex], 1);
@@ -664,23 +664,23 @@ GPUg() void __launch_bounds__(256, 1) compileTrackletsLookupTableKernel(
 
 template <bool dryRun, int nLayers = 7>
 GPUg() void __launch_bounds__(256, 1) processNeighboursKernel(
-                                    const int layer,
-                                    const int level,
-                                    CellSeed<nLayers>** allCellSeeds,
-                                    CellSeed<nLayers>* currentCellSeeds,
-                                    const int* currentCellIds,
-                                    const unsigned int nCurrentCells,
-                                    CellSeed<nLayers>* updatedCellSeeds,
-                                    int* updatedCellsIds,
-                                    int* foundSeedsTable,               // auxiliary only in GPU code to compute the number of cells per iteration
-                                    const unsigned char** usedClusters, // Used clusters
-                                    int* neighbours,
-                                    int* neighboursLUT,
-                                    const TrackingFrameInfo** foundTrackingFrameInfo,
-                                    const float bz,
-                                    const float maxChi2ClusterAttachment,
-                                    const o2::base::Propagator* propagator,
-                                    const o2::base::PropagatorF::MatCorrType matCorrType)
+  const int layer,
+  const int level,
+  CellSeed<nLayers>** allCellSeeds,
+  CellSeed<nLayers>* currentCellSeeds,
+  const int* currentCellIds,
+  const unsigned int nCurrentCells,
+  CellSeed<nLayers>* updatedCellSeeds,
+  int* updatedCellsIds,
+  int* foundSeedsTable,               // auxiliary only in GPU code to compute the number of cells per iteration
+  const unsigned char** usedClusters, // Used clusters
+  int* neighbours,
+  int* neighboursLUT,
+  const TrackingFrameInfo** foundTrackingFrameInfo,
+  const float bz,
+  const float maxChi2ClusterAttachment,
+  const o2::base::Propagator* propagator,
+  const o2::base::PropagatorF::MatCorrType matCorrType)
 {
   constexpr float layerxX0[7] = {5.e-3f, 5.e-3f, 5.e-3f, 1.e-2f, 1.e-2f, 1.e-2f, 1.e-2f}; // Hardcoded here for the moment.
   for (unsigned int iCurrentCell = blockIdx.x * blockDim.x + threadIdx.x; iCurrentCell < nCurrentCells; iCurrentCell += blockDim.x * gridDim.x) {
