@@ -315,6 +315,8 @@ AddOption(tpcMergedTrackPerSectorTrack, float, 1.0, "", 0, "Scaling Factor: tpcM
 AddOption(tpcMergedTrackHitPerSectorHit, float, 1.1, "", 0, "Scaling Factor: tpcMergedTrackHitPerSectorHit")
 AddOptionArray(tpcCompressedUnattachedHitsBase1024, int32_t, 3, (900, 900, 500), "", 0, "Scaling Factor: tpcCompressedUnattachedHitsBase1024")
 AddOption(conservativeMemoryEstimate, bool, false, "", 0, "Use some more conservative defaults for larger buffers during TPC processing")
+AddOption(tpcDecodingClusterRatioFactor1, float, 1.6, "", 0, "Scaling Factor: for first margin of dynamic buffer allocation for attached clusters in TPC Decoding")
+AddOption(tpcDecodingClusterRatioFactor2, float, 3.5, "", 0, "Scaling Factor: for second margin of dynamic buffer allocation for attached clusters in TPC Decoding")
 AddHelp("help", 'h')
 EndConfig()
 
