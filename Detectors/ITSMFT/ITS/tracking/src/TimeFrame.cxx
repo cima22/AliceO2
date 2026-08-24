@@ -188,6 +188,17 @@ void TimeFrame<NLayers>::prepareROFrameData(gsl::span<const itsmft::CompClusterE
 }
 
 template <int NLayers>
+void TimeFrame<NLayers>::allocateClusterSortStorage(const TrackingParameters& trkParam, const int maxLayers)
+{
+  for (unsigned int iLayer{0}; iLayer < std::min((int)mClusters.size(), maxLayers); ++iLayer) {
+    clearResizeBoundedVector(mClusters[iLayer], mUnsortedClusters[iLayer].size(), getMaybeFrameworkHostResource(maxLayers != NLayers));
+  }
+  for (int iLayer{0}; iLayer < NLayers; ++iLayer) {
+    clearResizeBoundedVector(mIndexTables[iLayer], getNrof(iLayer) * ((trkParam.ZBins * trkParam.PhiBins) + 1), getMaybeFrameworkHostResource());
+  }
+}
+
+template <int NLayers>
 void TimeFrame<NLayers>::prepareClusters(const TrackingParameters& trkParam, const int maxLayers)
 {
   const int numBins{trkParam.PhiBins * trkParam.ZBins};
@@ -301,6 +312,7 @@ void TimeFrame<NLayers>::initialise(const TrackingParameters& trkParam, const in
     deepVectorClear(mTracks);
     deepVectorClear(mTracksLabel);
     deepVectorClear(mLines);
+    deepVectorClear(mLinesQuality);
     deepVectorClear(mLinesLabels);
     if (trkParam.PassFlags[IterationStep::ResetVertices]) {
       deepVectorClear(mPrimaryVertices);
@@ -308,28 +320,27 @@ void TimeFrame<NLayers>::initialise(const TrackingParameters& trkParam, const in
     }
     clearResizeBoundedVector(mLinesLabels, getNrof(1), mMemoryPool.get());
     mIndexTableUtils.setTrackingParameters(trkParam);
-    clearResizeBoundedVector(mPositionResolution, trkParam.NLayers, mMemoryPool.get());
-    clearResizeBoundedVector(mBogusClusters, trkParam.NLayers, mMemoryPool.get());
+    clearResizeBoundedVector(mPositionResolution, NLayers, mMemoryPool.get());
+    clearResizeBoundedVector(mBogusClusters, NLayers, mMemoryPool.get());
     deepVectorClear(mTrackletClusters);
     for (unsigned int iLayer{0}; iLayer < std::min((int)mClusters.size(), maxLayers); ++iLayer) {
-      clearResizeBoundedVector(mClusters[iLayer], mUnsortedClusters[iLayer].size(), getMaybeFrameworkHostResource(maxLayers != NLayers));
       clearResizeBoundedVector(mUsedClusters[iLayer], mUnsortedClusters[iLayer].size(), getMaybeFrameworkHostResource(maxLayers != NLayers));
       mPositionResolution[iLayer] = o2::gpu::CAMath::Sqrt((0.5f * (trkParam.SystErrorZ2[iLayer] + trkParam.SystErrorY2[iLayer])) + (trkParam.LayerResolution[iLayer] * trkParam.LayerResolution[iLayer]));
     }
     clearResizeBoundedVector(mLines, getNrof(1), mMemoryPool.get());
+    clearResizeBoundedVector(mLinesQuality, getNrof(1), mMemoryPool.get());
     clearResizeBoundedVector(mTrackletClusters, getNrof(1), mMemoryPool.get());
-
-    for (int iLayer{0}; iLayer < NLayers; ++iLayer) {
-      clearResizeBoundedVector(mIndexTables[iLayer], getNrof(iLayer) * ((trkParam.ZBins * trkParam.PhiBins) + 1), getMaybeFrameworkHostResource());
-    }
-    for (int iLayer{0}; iLayer < trkParam.NLayers; ++iLayer) {
-      if (trkParam.SystErrorY2[iLayer] > 0.f || trkParam.SystErrorZ2[iLayer] > 0.f) {
-        for (auto& tfInfo : mTrackingFrameInfo[iLayer]) {
-          /// Account for alignment systematics in the cluster covariance matrix
-          tfInfo.covarianceTrackingFrame[0] += trkParam.SystErrorY2[iLayer];
-          tfInfo.covarianceTrackingFrame[2] += trkParam.SystErrorZ2[iLayer];
+    allocateClusterSortStorage(trkParam, maxLayers);
+    if (!mSystErrorsApplied) {
+      for (int iLayer{0}; iLayer < trkParam.NLayers; ++iLayer) {
+        if (trkParam.SystErrorY2[iLayer] > 0.f || trkParam.SystErrorZ2[iLayer] > 0.f) {
+          for (auto& tfInfo : mTrackingFrameInfo[iLayer]) {
+            tfInfo.covarianceTrackingFrame[0] += trkParam.SystErrorY2[iLayer];
+            tfInfo.covarianceTrackingFrame[2] += trkParam.SystErrorZ2[iLayer];
+          }
         }
       }
+      mSystErrorsApplied = true;
     }
 
     mMinR.fill(std::numeric_limits<float>::max());
@@ -505,6 +516,7 @@ template <int NLayers>
 void TimeFrame<NLayers>::wipe()
 {
   resetTrackExtensionCounters();
+  mSystErrorsApplied = false;
   deepVectorClear(mTracks);
   deepVectorClear(mTracklets);
   deepVectorClear(mCells);
@@ -526,6 +538,7 @@ void TimeFrame<NLayers>::wipe()
   deepVectorClear(mTrackletsIndexROF);
   deepVectorClear(mTrackletClusters);
   deepVectorClear(mLines);
+  deepVectorClear(mLinesQuality);
   // if we use the external host allocator then the assumption is that we
   // don't clear the memory ourself
   if (!hasFrameworkAllocator()) {

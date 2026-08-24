@@ -315,6 +315,7 @@ std::vector<VertexingParameters> TrackingMode::getVertexingParameters(TrackingMo
     p.ZBins = vc.ZBins;
     p.PhiBins = vc.PhiBins;
     p.useTruthSeeding = vc.useTruthSeeding;
+    p.useParallelSeeding = vc.useParallelSeeding;
     p.maxTrackletsPerCluster = vc.maxTrackletsPerCluster;
     p.zCut = vc.zCut;
     p.phiCut = vc.phiCut;

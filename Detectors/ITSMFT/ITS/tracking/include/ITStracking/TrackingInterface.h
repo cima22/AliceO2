@@ -29,6 +29,8 @@
 #include "GPUChainITS.h"
 
 #include <oneapi/tbb/task_arena.h>
+#include <utility>
+#include <vector>
 
 namespace o2::its
 {
@@ -103,6 +105,7 @@ class ITSTrackingInterface
   const o2::dataformats::MeanVertexObject* mMeanVertex{};
   std::shared_ptr<BoundedMemoryResource> mMemoryPool;
   std::shared_ptr<tbb::task_arena> mTaskArena;
+  // MC performance / vertex-dump state
 };
 
 } // namespace o2::its

@@ -11,8 +11,14 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <format>
 #include <memory>
+#include <ranges>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include <oneapi/tbb/task_arena.h>
 
@@ -35,6 +41,7 @@
 #include "Framework/InputRecordWalker.h"
 #include "Framework/DataRefUtils.h"
 #include "Framework/DeviceSpec.h"
+#include "SimulationDataFormat/MCTrack.h"
 
 using namespace o2::framework;
 using namespace o2::its;
@@ -51,6 +58,33 @@ void ITSTrackingInterface::initialise()
   auto trackParams = TrackingMode::getTrackingParameters(mMode);
   auto vertParams = TrackingMode::getVertexingParameters(mMode);
   overrideParameters(trackParams, vertParams);
+  if (trackConf.seedingVertexIteration && !trackParams.empty()) {
+
+    TrackingParameters seedingPass = trackParams.front();
+    seedingPass.PassFlags = IterationSteps{IterationStep::FirstPass, IterationStep::RebuildClusterLUT,
+                                           IterationStep::ResetVertices, IterationStep::SeedingVertexPass};
+    seedingPass.PerPrimaryVertexProcessing = false;
+    seedingPass.UseDiamond = true;  // PV-independent
+    seedingPass.NLayers = 3;        // 3-layer {0,1,2} vertexing topology
+    seedingPass.MinTrackLength = 3; // only trackleting+celling on the 3 inner layers
+    seedingPass.CreateArtefactLabels = mIsMC;
+    seedingPass.ZBins = vertConf.ZBins;
+    seedingPass.PhiBins = vertConf.PhiBins;
+    seedingPass.Diamond[0] = trackConf.diamondPos[0];
+    seedingPass.Diamond[1] = trackConf.diamondPos[1];
+    seedingPass.Diamond[2] = trackConf.diamondPos[2];
+    seedingPass.NSigmaCut = trackConf.diamondTrackletingNSigmaCut;
+    seedingPass.PVres = trackConf.diamondTrackletingPVres;
+    seedingPass.CellDeltaTanLambdaSigma = trackConf.diamondTrackletingCellDeltaTanLambdaSigma;
+    seedingPass.CellDeltaTanLambdaNSigma = trackConf.diamondCellTanLambdaNSigma;
+    seedingPass.CellDeltaPhiMinPt = trackConf.diamondTrackletingCellDeltaPhiMinPt;
+    seedingPass.CellLineSharedClusterCut = trackConf.cellLineSharedClusterCut;
+    trackParams.push_back(seedingPass);
+    LOGP(info, "Appended a seeding-vertex pass slot (stub sub-steps; mVertexer still active): TrackletMinPt={:.4f} NSigmaCut={:.4f} PVres={:.4f} CellDeltaTanLambdaSigma={:.6f} CellDeltaTanLambdaNSigma={:.4f} CellDeltaPhiMinPt={:.4f} CellLineSharedClusterCut={} ZBins={} PhiBins={}",
+         seedingPass.TrackletMinPt, seedingPass.NSigmaCut, seedingPass.PVres,
+         seedingPass.CellDeltaTanLambdaSigma, seedingPass.CellDeltaTanLambdaNSigma, seedingPass.CellDeltaPhiMinPt, seedingPass.CellLineSharedClusterCut,
+         seedingPass.ZBins, seedingPass.PhiBins);
+  }
   LOGP(info, "Initializing tracker in {} phase reconstruction with {} passes for tracking and {}/{} for vertexing", TrackingMode::toString(mMode), trackParams.size(), o2::its::VertexerParamConfig::Instance().nIterations, vertParams.size());
   mTracker->setParameters(trackParams);
   mVertexer->setParameters(vertParams);
@@ -221,8 +255,12 @@ void ITSTrackingInterface::run(framework::ProcessingContext& pc)
 
   float vertexerElapsedTime{0.f}, trackerElapsedTime{0.f};
   if (mRunVertexer) {
-    // Run seeding vertexer
-    vertexerElapsedTime = mVertexer->clustersToVertices(logger);
+    // Run seeding vertexer. With seedingVertexIteration the tracker-owned seeding phase replaces the
+    // standalone vertexer (Option A): same call site, so the consumer block below is unchanged. Until
+    // the seeding sub-steps are implemented it produces no vertices, so keep the flag off in production.
+    vertexerElapsedTime = o2::its::TrackerParamConfig::Instance().seedingVertexIteration
+                            ? mTracker->clustersToVertices(logger)
+                            : mVertexer->clustersToVertices(logger);
     const auto& vtx = mTimeFrame->getPrimaryVertices();
     vertices.insert(vertices.begin(), vtx.begin(), vtx.end());
     if (mIsMC) {

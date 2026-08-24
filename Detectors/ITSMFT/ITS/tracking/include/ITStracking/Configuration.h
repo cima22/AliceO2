@@ -16,6 +16,8 @@
 #ifndef TRACKINGITSU_INCLUDE_CONFIGURATION_H_
 #define TRACKINGITSU_INCLUDE_CONFIGURATION_H_
 
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
 #ifndef GPUCA_GPUCODE_DEVICE
 #include <limits>
@@ -25,6 +27,7 @@
 
 #include "CommonUtils/EnumFlags.h"
 #include "DetectorsBase/Propagator.h"
+#include "CommonConstants/MathConstants.h"
 #include "ITStracking/Constants.h"
 #include "ITStracking/LayerMask.h"
 
@@ -42,6 +45,7 @@ enum class IterationStep : uint16_t {
   MarkVerticesAsUPC,
   TrackFollowerTop,
   TrackFollowerBot,
+  SeedingVertexPass, // this iteration runs the seeding-vertex step instead of track finding
 };
 using IterationSteps = o2::utils::EnumFlags<IterationStep>;
 
@@ -111,6 +115,8 @@ struct TrackingParameters {
   float TrackletMinPt = 0.3f;
   /// Cell finding cuts
   float CellDeltaTanLambdaSigma = 0.007f;
+  float CellDeltaTanLambdaNSigma = -1.f;
+  float CellDeltaPhiMinPt = -1.f;
   /// Fitter parameters
   o2::base::PropagatorImpl<float>::MatCorrType CorrType = o2::base::PropagatorImpl<float>::MatCorrType::USEMatCorrNONE;
   float MaxChi2ClusterAttachment = 60.f;
@@ -138,7 +144,23 @@ struct TrackingParameters {
   float SharedClusterMaxDeltaEta = 0.03f; // For tracks sharing clusters, maximum allowed delta eta at the cluster position
   bool SharedClusterOppositeSign = false; // For tracks sharing clusters, require opposite sign of the tracklets
   int SharedMaxClusters = 0;              // Maximal allowed shared clusters (excluding first cluster)
+
+  int CellLineSharedClusterCut = 2; // Seeding-vertex pass: max clusters a cell->Line may share with already-accepted Lines before it is dropped
 };
+
+inline float cellDeltaPhiBound(const float bz, const float ptMin,
+                               const float rIn, const float rMid, const float rOut,
+                               const float msAngle)
+{
+  if (ptMin <= 0.f) {
+    return -1.f;
+  }
+  const float oneOverR = 0.001f * 0.3f * std::abs(bz) / ptMin; // 1 / curvature radius [1/cm]
+  const float sA = std::min(0.25f * (rIn + rMid) * oneOverR, 1.f - 1.e-6f);
+  const float sB = std::min(0.25f * (rMid + rOut) * oneOverR, 1.f - 1.e-6f);
+  const float bound = 2.f * (std::asin(sB) - std::asin(sA)) + 2.f * msAngle;
+  return std::min(bound, static_cast<float>(o2::constants::math::PI));
+}
 
 struct VertexingParameters {
   std::string asString() const;
@@ -171,7 +193,8 @@ struct VertexingParameters {
   int zSpan = -1;
   bool SaveTimeBenchmarks = false;
 
-  bool useTruthSeeding = false; // overwrite found vertices with MC events
+  bool useTruthSeeding = false;    // overwrite found vertices with MC events
+  bool useParallelSeeding = false; // use the GPU-oriented parallel seeding
 
   int nThreads = 1;
   bool PrintMemory = false; // print allocator usage in epilog report

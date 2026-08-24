@@ -239,6 +239,12 @@ struct TimeFrame {
   void computeTracletsPerClusterScans();
   int& getNTrackletsROF(int rofId, int combId) { return mNTrackletsPerROF[combId][rofId]; }
   auto& getLines(int rofId) { return mLines[rofId]; }
+  struct LineQuality {
+    float chi2{-1.f};
+    float pt{-1.f};
+  };
+  auto& getLinesQuality(int rofId) { return mLinesQuality[rofId]; }
+  const auto& getLinesQuality(int rofId) const { return mLinesQuality[rofId]; }
   int getNLinesTotal() const noexcept { return mTotalLines; }
   void setNLinesTotal(uint32_t a) noexcept { mTotalLines = a; }
   auto& getTrackletClusters(int rofId) { return mTrackletClusters[rofId]; }
@@ -306,12 +312,14 @@ struct TimeFrame {
   virtual const char* getName() const noexcept { return "CPU"; }
 
  protected:
-  void prepareClusters(const TrackingParameters& trkParam, const int maxLayers = NLayers);
+  virtual void prepareClusters(const TrackingParameters& trkParam, const int maxLayers = NLayers);
+  virtual void allocateClusterSortStorage(const TrackingParameters& trkParam, const int maxLayers);
   float mBz = 5.;
   unsigned int mNTotalLowPtVertices = 0;
   int mBeamPosWeight = 0;
   std::array<float, 2> mBeamPos = {0.f, 0.f};
   bool isBeamPositionOverridden = false;
+  bool mSystErrorsApplied = false;
   std::array<float, NLayers> mMinR;
   std::array<float, NLayers> mMaxR;
   bounded_vector<float> mLinkPhiCuts;
@@ -332,6 +340,7 @@ struct TimeFrame {
   bounded_vector<VertexLabel> mPrimaryVerticesLabels;
   std::vector<bounded_vector<int>> mNTrackletsPerROF;
   std::vector<bounded_vector<Line>> mLines;
+  std::vector<bounded_vector<LineQuality>> mLinesQuality; // lockstep with mLines, see getLinesQuality()
   std::vector<bounded_vector<ClusterLines>> mTrackletClusters;
   std::array<bounded_vector<int>, 2> mTrackletsIndexROF;
   std::vector<bounded_vector<MCCompLabel>> mLinesLabels;

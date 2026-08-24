@@ -44,6 +44,14 @@ struct VertexerParamConfig : public o2::conf::ConfigurableParamHelper<VertexerPa
   // Artefacts selections
   int clusterContributorsCut = 2; // minimum number of contributors for an accepted final vertex
   int suppressLowMultDebris = 16; // suppress all vertices below this threshold if a vertex was already found in a rof
+  float lineMinPt = -1.f;
+  float fineZWindow = -1.f;
+  int fineMinDensity = 8;
+  float fineMaxDrift = -1.f;
+  float goodLineChi2Cut = 5.f;
+  float goodLinePtCut = 0.5f;
+  float goodContributorsSignificance = -1.f;
+  float duplicateZScale = -1.f;
   int seedMemberRadiusTime = 0;
   int seedMemberRadiusZ = 2;
   int maxTrackletsPerCluster = 100;
@@ -52,7 +60,9 @@ struct VertexerParamConfig : public o2::conf::ConfigurableParamHelper<VertexerPa
   int ZBins = 1;     // z-phi index table configutation: number of z bins
   int PhiBins = 128; // z-phi index table configutation: number of phi bins
 
-  bool useTruthSeeding{false}; // overwrite seeding vertices with MC truth
+  bool useTruthSeeding{false};    // overwrite seeding vertices with MC truth
+  bool useParallelSeeding{false}; // use the GPU-oriented parallel seeding (computeVertices)
+  bool incrementalSeeding{false}; // CPU-only fast path for computeVertices
 
   int nThreads = 1;
   bool printMemory = false;
@@ -84,18 +94,26 @@ struct TrackerParamConfig : public o2::conf::ConfigurableParamHelper<TrackerPara
   float pvRes = -1.f;
   int LUTbinsPhi = -1;
   int LUTbinsZ = -1;
-  float diamondPos[3] = {0.f, 0.f, 0.f};   // override the position of the vertex
-  bool useDiamond = false;                 // enable overriding the vertex position
-  bool perPrimaryVertexProcessing = false; // perform the full tracking considering the vertex hypotheses one at the time.
-  bool saveTimeBenchmarks = false;         // dump metrics on file
-  bool overrideBeamEstimation = false;     // use beam position from meanVertex CCDB object
-  int trackingMode = -1;                   // -1: unset, 0=sync, 1=async, 2=cosmics used by gpuwf only
-  bool doUPCIteration = false;             // Perform an additional iteration for UPC events on tagged vertices. You want to combine this config with VertexerParamConfig.nIterations=2
-  int nIterations = constants::MaxIter;    // overwrite the number of iterations
-  int reseedIfShorter = 6;                 // for the final refit reseed the track with circle if they are shorter than this value
-  bool shiftRefToCluster{true};            // TrackFit: after update shift the linearization reference to cluster
-  bool repeatRefitOut{false};              // repeat outward refit using inward refit as a seed
-  bool createArtefactLabels{false};        // create on-the-fly labels for the artefacts
+  float diamondPos[3] = {0.f, 0.f, 0.f};       // override the position of the vertex
+  bool useDiamond = false;                     // enable overriding the vertex position
+  bool perPrimaryVertexProcessing = false;     // perform the full tracking considering the vertex hypotheses one at the time.
+  bool seedingVertexIteration = false;         // prepend a seeding-vertex iteration (diamond->cell->line->parallel seeding) to the tracker passes
+  float diamondTrackletingNSigmaCut = 6.6136f; // z-window n-sigma for the diamond trackleting (gates the cell tanLambda too unless the next one is set)
+  float diamondCellTanLambdaNSigma = -1.f;
+  float diamondTrackletingPVres = 0.9676f;                  // effective PV resolution [cm] feeding the trackleting z-sigma
+  float diamondTrackletingCellDeltaTanLambdaSigma = 0.007f; // cell tanLambda sigma for the diamond celling
+  float diamondTrackletingCellDeltaPhiMinPt = -1.f;
+  int cellLineSharedClusterCut = 1; // Max clusters a cell->Line may share with already-accepted Lines before being dropped.
+
+  bool saveTimeBenchmarks = false;      // dump metrics on file
+  bool overrideBeamEstimation = false;  // use beam position from meanVertex CCDB object
+  int trackingMode = -1;                // -1: unset, 0=sync, 1=async, 2=cosmics used by gpuwf only
+  bool doUPCIteration = false;          // Perform an additional iteration for UPC events on tagged vertices. You want to combine this config with VertexerParamConfig.nIterations=2
+  int nIterations = constants::MaxIter; // overwrite the number of iterations
+  int reseedIfShorter = 6;              // for the final refit reseed the track with circle if they are shorter than this value
+  bool shiftRefToCluster{true};         // TrackFit: after update shift the linearization reference to cluster
+  bool repeatRefitOut{false};           // repeat outward refit using inward refit as a seed
+  bool createArtefactLabels{false};     // create on-the-fly labels for the artefacts
   bool trackFollowerTop[constants::MaxIter] = {};
   bool trackFollowerBot[constants::MaxIter] = {};
   float trackFollowerNSigmaCutZ = 1.f;
