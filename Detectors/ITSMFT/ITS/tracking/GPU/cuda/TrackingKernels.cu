@@ -283,8 +283,7 @@ GPUg() void __launch_bounds__(GPUThreads, MinBlocks.computeLayerCells) computeLa
   const int outputCapacity,
   const float cellDeltaTanLambdaSigma,
   const float cellDeltaPhiCut,
-  const float nSigmaCut
-)
+  const float nSigmaCut)
 {
   const auto cellTopology = topology.getCell(cellTopologyId);
   for (int iCurrentTrackletIndex = blockIdx.x * blockDim.x + threadIdx.x; iCurrentTrackletIndex < nTrackletsCurrent; iCurrentTrackletIndex += blockDim.x * gridDim.x) {
@@ -795,10 +794,10 @@ GPUg() void vertexingRegisterCellClustersOwnership(
   const int nCells,
   unsigned long long** clusterOwners)
 {
-  for(int k = blockIdx.x * blockDim.x + threadIdx.x; k < nCells; k += blockDim.x * gridDim.x){
+  for (int k = blockIdx.x * blockDim.x + threadIdx.x; k < nCells; k += blockDim.x * gridDim.x) {
     const CellSeed& cell = cells[k];
-    if(o2::gpu::CAMath::Abs(cell.getQ2Pt()) < o2::constants::math::Almost0 ||
-       o2::gpu::CAMath::Abs(cell.getSnp()) > o2::constants::math::Almost1) {
+    if (o2::gpu::CAMath::Abs(cell.getQ2Pt()) < o2::constants::math::Almost0 ||
+        o2::gpu::CAMath::Abs(cell.getSnp()) > o2::constants::math::Almost1) {
       continue;
     }
     const float pt = cell.getPt();
@@ -902,9 +901,10 @@ GPUg() void linearizeCellsKernel(
 }
 
 template <int NLayers>
-GPUg() void gatherSortedLinesKernel(const int nLines, LineProjSoA lineProj, LineProjSoA lineProjSorted){
+GPUg() void gatherSortedLinesKernel(const int nLines, LineProjSoA lineProj, LineProjSoA lineProjSorted)
+{
   const int* sortedIdx = lineProj.idx;
-  for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < nLines; i += blockDim.x * gridDim.x){
+  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nLines; i += blockDim.x * gridDim.x) {
     lineProjSorted.z[i] = lineProj.z[sortedIdx[i]];
     lineProjSorted.t[i] = lineProj.t[sortedIdx[i]];
     lineProjSorted.rof[i] = lineProj.rof[sortedIdx[i]];
@@ -912,11 +912,12 @@ GPUg() void gatherSortedLinesKernel(const int nLines, LineProjSoA lineProj, Line
 }
 
 template <int NLayers>
-GPUg() void scanDensityKernel(int* zDensity, LineWindow* win, const int nLines, const int* offsets, const LineProjSoA lineProjSorted, const float zWindow){
+GPUg() void scanDensityKernel(int* zDensity, LineWindow* win, const int nLines, const int* offsets, const LineProjSoA lineProjSorted, const float zWindow)
+{
   const float* z = lineProjSorted.z;
   const LineTime* t = lineProjSorted.t;
   const int* rof = lineProjSorted.rof;
-  for(int iLine = blockIdx.x * blockDim.x + threadIdx.x; iLine < nLines; iLine += blockDim.x * gridDim.x){
+  for (int iLine = blockIdx.x * blockDim.x + threadIdx.x; iLine < nLines; iLine += blockDim.x * gridDim.x) {
     const int rofId = rof[iLine];
     const int rofOffset = offsets[rofId];
     const int nextRofOffset = offsets[rofId + 1];
@@ -926,9 +927,9 @@ GPUg() void scanDensityKernel(int* zDensity, LineWindow* win, const int nLines, 
     win[iLine] = LineWindow{lo, hi};
     const LineTime ti = t[iLine];
     int count = 0;
-    for(int j = lo; j < hi; ++j){
+    for (int j = lo; j < hi; ++j) {
       const LineTime tj = t[j];
-      if(o2::gpu::GPUCommonMath::Abs(ti.tc - tj.tc) <= (ti.th + tj.th)){ // count only if time compatible (includes self)
+      if (o2::gpu::GPUCommonMath::Abs(ti.tc - tj.tc) <= (ti.th + tj.th)) { // count only if time compatible (includes self)
         ++count;
       }
     }
@@ -942,8 +943,8 @@ GPUg() void fitPeaksKernel(const int* nPeaksDevice,
                            const gpu::LineWindow* win,
                            const LineProjSoA lineProjSorted,
                            const GPULine* lines,
-                           const float* lineChi2, // global-indexed, same indexing as lines[]
-                           const float* linePt,   // idem
+                           const float* lineChi2,       // global-indexed, same indexing as lines[]
+                           const float* linePt,         // idem
                            const float goodLineChi2Cut, // a contributor counts towards nGood only if its own
                            const float goodLinePtCut,   // cell passes both; <= 0 disables that half
                            const float pairCut2,
@@ -953,11 +954,12 @@ GPUg() void fitPeaksKernel(const int* nPeaksDevice,
                            const float beamY,
                            const uint8_t* isZPeakFine, // null when the fine pass is off
                            const float fineMaxDrift,   // <= 0 disables; see VertexerParamConfig::fineMaxDrift
-                           VertexCand* cands){
+                           VertexCand* cands)
+{
   const int nPeaks = *nPeaksDevice;
   const LineTime* t = lineProjSorted.t;
   const int* idx = lineProjSorted.idx;
-  for(int p = blockIdx.x * blockDim.x + threadIdx.x; p < nPeaks; p += blockDim.x * gridDim.x){
+  for (int p = blockIdx.x * blockDim.x + threadIdx.x; p < nPeaks; p += blockDim.x * gridDim.x) {
     cands[p].ok = 0;
     cands[p].nGood = 0;
     const int k = peakLineIdx[p];
@@ -967,26 +969,26 @@ GPUg() void fitPeaksKernel(const int* nPeaksDevice,
 
     GPUClusterLinesFit seed;
     int nMembers = 0;
-    for(int j = wk.lo; j < wk.hi; ++j){
+    for (int j = wk.lo; j < wk.hi; ++j) {
       const LineTime tj = t[j];
-      if(o2::gpu::GPUCommonMath::Abs(tk.tc - tj.tc) <= tk.th + tj.th){
+      if (o2::gpu::GPUCommonMath::Abs(tk.tc - tj.tc) <= tk.th + tj.th) {
         seed.add(lines[idx[j]]);
         ++nMembers;
       }
     }
     float seedVertex[3];
-    if(nMembers < 2 || !seed.solve(seedVertex)){
+    if (nMembers < 2 || !seed.solve(seedVertex)) {
       continue;
     }
 
     GPUClusterLinesFit fit;
     int nKept = 0;
     int nGood = 0;
-    for(int j = wk.lo; j < wk.hi; ++j){
+    for (int j = wk.lo; j < wk.hi; ++j) {
       const LineTime tj = t[j];
-      if(o2::gpu::GPUCommonMath::Abs(tk.tc - tj.tc) <= tk.th + tj.th){
+      if (o2::gpu::GPUCommonMath::Abs(tk.tc - tj.tc) <= tk.th + tj.th) {
         const GPULine& line = lines[idx[j]];
-        if(GPULine::getDistance2FromPoint(line, seedVertex) < pairCut2){
+        if (GPULine::getDistance2FromPoint(line, seedVertex) < pairCut2) {
           fit.add(line);
           const float c = lineChi2[idx[j]]; // the kept set is exactly what collectLinesForMCKernel re-walks
           const float pt = linePt[idx[j]];
@@ -998,26 +1000,26 @@ GPUg() void fitPeaksKernel(const int* nPeaksDevice,
       }
     }
     float vertex[3];
-    if(nKept < 2 || !fit.solve(vertex)){
+    if (nKept < 2 || !fit.solve(vertex)) {
       continue;
     }
     cands[p].seed[0] = seedVertex[0];
     cands[p].seed[1] = seedVertex[1];
     cands[p].seed[2] = seedVertex[2];
     const float bd2 = (beamX - vertex[0]) * (beamX - vertex[0]) + (beamY - vertex[1]) * (beamY - vertex[1]);
-    if(nKept < minContributors || !(bd2 < nSigmaCut)){
+    if (nKept < minContributors || !(bd2 < nSigmaCut)) {
       continue;
     }
-    if(fineMaxDrift > 0.f && cands[p].fine &&
-       o2::gpu::GPUCommonMath::Abs(vertex[2] - seedVertex[2]) > fineMaxDrift){
+    if (fineMaxDrift > 0.f && cands[p].fine &&
+        o2::gpu::GPUCommonMath::Abs(vertex[2] - seedVertex[2]) > fineMaxDrift) {
       continue;
     }
 
-    for(int j = wk.lo; j < wk.hi; ++j){
+    for (int j = wk.lo; j < wk.hi; ++j) {
       const LineTime tj = t[j];
-      if(o2::gpu::GPUCommonMath::Abs(tk.tc - tj.tc) <= tk.th + tj.th){
+      if (o2::gpu::GPUCommonMath::Abs(tk.tc - tj.tc) <= tk.th + tj.th) {
         const GPULine& line = lines[idx[j]];
-        if(GPULine::getDistance2FromPoint(line, seedVertex) < pairCut2){
+        if (GPULine::getDistance2FromPoint(line, seedVertex) < pairCut2) {
           fit.addResidual(line, vertex);
         }
       }
@@ -1026,7 +1028,7 @@ GPUg() void fitPeaksKernel(const int* nPeaksDevice,
     cands[p].x = vertex[0];
     cands[p].y = vertex[1];
     cands[p].z = vertex[2];
-    for(int i = 0; i < 6; ++i){
+    for (int i = 0; i < 6; ++i) {
       cands[p].rms2[i] = fit.getRMS2()[i];
     }
     cands[p].avgDist2 = fit.getAvgDistance2();
@@ -1038,12 +1040,13 @@ GPUg() void fitPeaksKernel(const int* nPeaksDevice,
 }
 
 // Strict local maximum of the density over a line's own z-window, ties broken by smaller z
-GPUdi() bool isDensityPeak(const int* density, const float* z, const LineWindow w, const int iLine){
+GPUdi() bool isDensityPeak(const int* density, const float* z, const LineWindow w, const int iLine)
+{
   const int di = density[iLine];
   const float zi = z[iLine];
-  for(int j = w.lo; j < w.hi; ++j){
+  for (int j = w.lo; j < w.hi; ++j) {
     const int dj = density[j];
-    if(dj > di || (dj == di && z[j] < zi)){
+    if (dj > di || (dj == di && z[j] < zi)) {
       return false;
     }
   }
@@ -1053,19 +1056,20 @@ GPUdi() bool isDensityPeak(const int* density, const float* z, const LineWindow 
 template <int NLayers>
 GPUg() void findPeaksKernel(const int* zDensity, const LineWindow* win, const int nLines, const LineProjSoA lineProjSorted, uint8_t* isZPeak,
                             const int* zDensityFine, const LineWindow* winFine,
-                            const int fineMinDensity, uint8_t* isZPeakFine){
+                            const int fineMinDensity, uint8_t* isZPeakFine)
+{
   const float* z = lineProjSorted.z;
-  for(int iLine = blockIdx.x * blockDim.x + threadIdx.x; iLine < nLines; iLine += blockDim.x * gridDim.x){
+  for (int iLine = blockIdx.x * blockDim.x + threadIdx.x; iLine < nLines; iLine += blockDim.x * gridDim.x) {
     uint8_t peak = zDensity[iLine] >= 2 && isDensityPeak(zDensity, z, win[iLine], iLine);
 
     // fine pass: if the coarse pass did not find a peak, check if the fine density is above threshold and is a peak
     uint8_t fine = 0;
-    if(!peak && zDensityFine != nullptr){
+    if (!peak && zDensityFine != nullptr) {
       fine = zDensityFine[iLine] >= fineMinDensity && isDensityPeak(zDensityFine, z, winFine[iLine], iLine);
       peak = fine;
     }
     isZPeak[iLine] = peak;
-    if(isZPeakFine != nullptr){
+    if (isZPeakFine != nullptr) {
       isZPeakFine[iLine] = fine;
     }
   }
@@ -1078,30 +1082,31 @@ GPUg() void dedupVertexCandidatesKernel(const int* nPeaksDevice,
                                         const LineProjSoA lineProjSorted,
                                         const float duplicateZCut,
                                         const float duplicateZScale,
-                                        VertexCand* cands){
+                                        VertexCand* cands)
+{
   const int nPeaks = *nPeaksDevice;
-  for (int p = blockIdx.x * blockDim.x + threadIdx.x; p < nPeaks; p += blockDim.x * gridDim.x){
+  for (int p = blockIdx.x * blockDim.x + threadIdx.x; p < nPeaks; p += blockDim.x * gridDim.x) {
     cands[p].keep = 0; // every visited slot must be written: this array is never memset
-    if(!cands[p].ok){
+    if (!cands[p].ok) {
       continue;
     }
     const int r = lineProjSorted.rof[peakLineIdx[p]];
     const float zp = cands[p].z;
     const int sp = cands[p].size;
     float radius = duplicateZCut;
-    if(duplicateZScale > 0.f && sp > 0){
+    if (duplicateZScale > 0.f && sp > 0) {
       radius = duplicateZScale / o2::gpu::GPUCommonMath::Sqrt((float)sp);
     }
     const auto tp = cands[p].time;
     uint8_t survive = 1;
-    for (int q = peakOffsets[r]; q < peakOffsets[r + 1] && survive; ++q){
-      if (q == p || !cands[q].ok){
+    for (int q = peakOffsets[r]; q < peakOffsets[r + 1] && survive; ++q) {
+      if (q == p || !cands[q].ok) {
         continue;
       }
-      if (!tp.isCompatible(cands[q].time)){
+      if (!tp.isCompatible(cands[q].time)) {
         continue;
       }
-      if(o2::gpu::GPUCommonMath::Abs(zp - cands[q].z) >= radius){
+      if (o2::gpu::GPUCommonMath::Abs(zp - cands[q].z) >= radius) {
         continue;
       }
       const int sq = cands[q].size;
@@ -1198,11 +1203,12 @@ GPUg() void collectLinesForMCKernel(const int* nPeaksDevice,
                                     const float pairCut2,
                                     const VertexCand* cands,
                                     const int* memberOffsets,
-                                    int* memberLines){
+                                    int* memberLines)
+{
   const int nPeaks = *nPeaksDevice;
   const LineTime* t = lineProjSorted.t;
   const int* idx = lineProjSorted.idx;
-  for (int p = blockIdx.x * blockDim.x + threadIdx.x; p < nPeaks; p += blockDim.x * gridDim.x){
+  for (int p = blockIdx.x * blockDim.x + threadIdx.x; p < nPeaks; p += blockDim.x * gridDim.x) {
     if (!cands[p].keep) {
       continue;
     }
@@ -1211,11 +1217,11 @@ GPUg() void collectLinesForMCKernel(const int* nPeaksDevice,
     const LineWindow wk = win[k];
     const float* seedVertex = cands[p].seed;
     int localIdx = 0;
-    for (int j = wk.lo; j < wk.hi; ++j){
+    for (int j = wk.lo; j < wk.hi; ++j) {
       const LineTime tj = t[j];
-      if(o2::gpu::GPUCommonMath::Abs(tk.tc - tj.tc) <= tk.th + tj.th){
+      if (o2::gpu::GPUCommonMath::Abs(tk.tc - tj.tc) <= tk.th + tj.th) {
         const GPULine& line = lines[idx[j]];
-        if(GPULine::getDistance2FromPoint(line, seedVertex) < pairCut2){
+        if (GPULine::getDistance2FromPoint(line, seedVertex) < pairCut2) {
           memberLines[memberOffsets[p] + localIdx++] = idx[j];
         }
       }
@@ -1495,16 +1501,16 @@ void TrackingKernels<NLayers>::computeCellNeighboursHandler(CellSeed** cellsLaye
 
 template <int NLayers>
 void sortClustersHandler(const Cluster* unsorted,   // this layer (resident unsorted)
-                         Cluster* sorted,            // this layer (output)
-                         const int* clusterOffsets,  // this layer ROF boundaries, size nRofs+1
-                         int* indexTable,            // this layer (output), size nRofs*(zBins*phiBins+1)
+                         Cluster* sorted,           // this layer (output)
+                         const int* clusterOffsets, // this layer ROF boundaries, size nRofs+1
+                         int* indexTable,           // this layer (output), size nRofs*(zBins*phiBins+1)
                          const IndexTableUtils<NLayers>* utils,
                          const typename ROFMaskTable<NLayers>::View& rofMask,
                          float beamX, float beamY,
                          int zBins, int phiBins, int nRofs, int nClustersLayer, int iLayer,
                          float* minRadiusLayer, float* maxRadiusLayer, // per-layer device arrays
-                         int* keys,                  // scratch, size nClustersLayer
-                         int* perm,                  // scratch, size nClustersLayer
+                         int* keys,                                    // scratch, size nClustersLayer
+                         int* perm,                                    // scratch, size nClustersLayer
                          o2::its::ExternalAllocator* alloc,
                          gpu::Stream& stream)
 {
@@ -1664,7 +1670,7 @@ void findPeaksHandler(const int nLines,
     return;
   }
   gpu::findPeaksKernel<NLayers><<<gpu::gridBlocks(gpu::DefaultBlocksPerComputeUnit), gpu::GPUThreads, 0, stream.get()>>>(density, win, nLines, sortedSoa, isPeak,
-                                                                                                 densityFine, winFine, fineMinDensity, isPeakFine);
+                                                                                                                         densityFine, winFine, fineMinDensity, isPeakFine);
   auto nosync_policy = THRUST_NAMESPACE::par_nosync(gpu::TypedAllocator<char>(alloc)).on(stream.get());
   thrust::exclusive_scan(nosync_policy, isPeak, isPeak + nLines + 1, peakScan, 0, thrust::plus<int>());
   thrust::scatter_if(nosync_policy, thrust::make_counting_iterator(0), thrust::make_counting_iterator(nLines),
@@ -1679,9 +1685,9 @@ void fitPeaksHandler(const int* nPeaksDevice,
                      const gpu::LineProjSoA sortedSoa,
                      const gpu::GPULine* lines,
                      const float* lineChi2,
-                                  const float* linePt,
-                                  const float goodLineChi2Cut,
-                                  const float goodLinePtCut,
+                     const float* linePt,
+                     const float goodLineChi2Cut,
+                     const float goodLinePtCut,
                      const float pairCut2,
                      const float nSigmaCut,
                      const int minContributors,
@@ -1739,7 +1745,6 @@ void collectLinesForMCHandler(const int* nPeaksDevice,
   gpu::collectLinesForMCKernel<NLayers><<<gpu::gridBlocks(gpu::DefaultBlocksPerComputeUnit), gpu::GPUThreads, 0, stream.get()>>>(
     nPeaksDevice, peakLineIdx, win, sortedSoa, lines, pairCut2, cands, memberOffsets, memberLines);
 }
-
 
 int finalizeCellNeighboursHandler(CellNeighbour* cellNeighbours,
                                   int* neighboursLUT,
@@ -2149,7 +2154,7 @@ template void findPeaksHandler<7>(const int nLines,
                                   const int* rofOffsets,
                                   const int* density,
                                   const gpu::LineWindow* win,
-                                              uint8_t* isPeak,
+                                  uint8_t* isPeak,
                                   const int* densityFine,
                                   const gpu::LineWindow* winFine,
                                   const int fineMinDensity,
@@ -2166,11 +2171,11 @@ template void fitPeaksHandler<7>(const int* nPeaksDevice,
                                  const gpu::LineProjSoA sortedSoa,
                                  const gpu::GPULine* lines,
                                  const float* lineChi2,
-                                  const float* linePt,
-                                              const float goodLineChi2Cut,
-                                  const float goodLinePtCut,
+                                 const float* linePt,
+                                 const float goodLineChi2Cut,
+                                 const float goodLinePtCut,
                                  const float pairCut2,
-                                             const float nSigmaCut,
+                                 const float nSigmaCut,
                                  const int minContributors,
                                  const float beamX,
                                  const float beamY,
@@ -2219,25 +2224,25 @@ template void sortClustersHandler<11>(const Cluster* unsorted, Cluster* sorted, 
                                       o2::its::ExternalAllocator* alloc, gpu::Stream& stream);
 
 template void linearizeCellsToLinesHandler<11>(const int nCells,
-                                              const CellSeed* cells,
-                                              const unsigned long long* const* clusterOwners,
-                                              const int* rofFramesClustersL1,
-                                              const int nRofsL1,
-                                              const int ownedClustersCut,
-                                              gpu::GPULine* lines,
-                                              int* lineRof,
-                                              int* lineClusters,
-                                              int* lineSlots,
-                                              const float beamX,
-                                              const float beamY,
-                                              const float maxZ,
-                                              const float minPt,
-                                              float* linesZs,
-                                              gpu::LineTime* lineTimes,
-                                              float* lineChi2,
-                                  float* linePt,
-                                              o2::its::ExternalAllocator* alloc,
-                                              gpu::Stream& stream);
+                                               const CellSeed* cells,
+                                               const unsigned long long* const* clusterOwners,
+                                               const int* rofFramesClustersL1,
+                                               const int nRofsL1,
+                                               const int ownedClustersCut,
+                                               gpu::GPULine* lines,
+                                               int* lineRof,
+                                               int* lineClusters,
+                                               int* lineSlots,
+                                               const float beamX,
+                                               const float beamY,
+                                               const float maxZ,
+                                               const float minPt,
+                                               float* linesZs,
+                                               gpu::LineTime* lineTimes,
+                                               float* lineChi2,
+                                               float* linePt,
+                                               o2::its::ExternalAllocator* alloc,
+                                               gpu::Stream& stream);
 
 template void sortLinesHandler<11>(const int nLines,
                                    const int nRofs,
@@ -2262,7 +2267,7 @@ template void findPeaksHandler<11>(const int nLines,
                                    const int* rofOffsets,
                                    const int* density,
                                    const gpu::LineWindow* win,
-                                                uint8_t* isPeak,
+                                   uint8_t* isPeak,
                                    const int* densityFine,
                                    const gpu::LineWindow* winFine,
                                    const int fineMinDensity,
@@ -2280,10 +2285,10 @@ template void fitPeaksHandler<11>(const int* nPeaksDevice,
                                   const gpu::GPULine* lines,
                                   const float* lineChi2,
                                   const float* linePt,
-                                               const float goodLineChi2Cut,
+                                  const float goodLineChi2Cut,
                                   const float goodLinePtCut,
                                   const float pairCut2,
-                                               const float nSigmaCut,
+                                  const float nSigmaCut,
                                   const int minContributors,
                                   const float beamX,
                                   const float beamY,
@@ -2331,25 +2336,25 @@ template void sortClustersHandler<13>(const Cluster* unsorted, Cluster* sorted, 
                                       o2::its::ExternalAllocator* alloc, gpu::Stream& stream);
 
 template void linearizeCellsToLinesHandler<13>(const int nCells,
-                                              const CellSeed* cells,
-                                              const unsigned long long* const* clusterOwners,
-                                              const int* rofFramesClustersL1,
-                                              const int nRofsL1,
-                                              const int ownedClustersCut,
-                                              gpu::GPULine* lines,
-                                              int* lineRof,
-                                              int* lineClusters,
-                                              int* lineSlots,
-                                              const float beamX,
-                                              const float beamY,
-                                              const float maxZ,
-                                              const float minPt,
-                                              float* linesZs,
-                                              gpu::LineTime* lineTimes,
-                                              float* lineChi2,
-                                  float* linePt,
-                                              o2::its::ExternalAllocator* alloc,
-                                              gpu::Stream& stream);
+                                               const CellSeed* cells,
+                                               const unsigned long long* const* clusterOwners,
+                                               const int* rofFramesClustersL1,
+                                               const int nRofsL1,
+                                               const int ownedClustersCut,
+                                               gpu::GPULine* lines,
+                                               int* lineRof,
+                                               int* lineClusters,
+                                               int* lineSlots,
+                                               const float beamX,
+                                               const float beamY,
+                                               const float maxZ,
+                                               const float minPt,
+                                               float* linesZs,
+                                               gpu::LineTime* lineTimes,
+                                               float* lineChi2,
+                                               float* linePt,
+                                               o2::its::ExternalAllocator* alloc,
+                                               gpu::Stream& stream);
 
 template void sortLinesHandler<13>(const int nLines,
                                    const int nRofs,
@@ -2374,7 +2379,7 @@ template void findPeaksHandler<13>(const int nLines,
                                    const int* rofOffsets,
                                    const int* density,
                                    const gpu::LineWindow* win,
-                                                uint8_t* isPeak,
+                                   uint8_t* isPeak,
                                    const int* densityFine,
                                    const gpu::LineWindow* winFine,
                                    const int fineMinDensity,
@@ -2392,10 +2397,10 @@ template void fitPeaksHandler<13>(const int* nPeaksDevice,
                                   const gpu::GPULine* lines,
                                   const float* lineChi2,
                                   const float* linePt,
-                                               const float goodLineChi2Cut,
+                                  const float goodLineChi2Cut,
                                   const float goodLinePtCut,
                                   const float pairCut2,
-                                               const float nSigmaCut,
+                                  const float nSigmaCut,
                                   const int minContributors,
                                   const float beamX,
                                   const float beamY,

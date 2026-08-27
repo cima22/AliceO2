@@ -527,7 +527,8 @@ void TimeFrameGPU<NLayers>::resetClusterOwnersDevice()
 }
 
 template <int NLayers>
-void TimeFrameGPU<NLayers>::createDiamondDevice(const Vertex& diamond){
+void TimeFrameGPU<NLayers>::createDiamondDevice(const Vertex& diamond)
+{
   GPUTimer timer("Creating diamond device");
   mDiamondDevice = allocDevice<Vertex>(1, (o2::gpu::GPUMemoryResource::MEMORY_GPU | o2::gpu::GPUMemoryResource::MEMORY_STACK));
   GPUChkErrS(cudaMemcpyAsync(mDiamondDevice, &diamond, sizeof(Vertex), cudaMemcpyHostToDevice, mGpuStreams[0].get()));
@@ -575,14 +576,16 @@ void TimeFrameGPU<NLayers>::createLinesDevice(const int nCells)
 }
 
 template <int NLayers>
-void TimeFrameGPU<NLayers>::createMemberLinesMCDevice(const int nMembers){
+void TimeFrameGPU<NLayers>::createMemberLinesMCDevice(const int nMembers)
+{
   constexpr auto kStack = (o2::gpu::GPUMemoryResource::MEMORY_GPU | o2::gpu::GPUMemoryResource::MEMORY_STACK);
   // Guard against a 0-byte allocation when a pass produces no survivors.
   mMemberLinesDevice = allocDeviceAsync<int>(std::max(nMembers, 1), mGpuStreams[0], kStack);
 }
 
 template <int NLayers>
-unsigned int TimeFrameGPU<NLayers>::getNLines(){
+unsigned int TimeFrameGPU<NLayers>::getNLines()
+{
   GPUTimer timer("getting number of lines");
   int nLinesSigned{0};
   GPUChkErrS(cudaMemcpyAsync(&nLinesSigned, mLineSlotsDevice + mNLinesCapacity, sizeof(int), cudaMemcpyDeviceToHost, mGpuStreams[0].get()));
